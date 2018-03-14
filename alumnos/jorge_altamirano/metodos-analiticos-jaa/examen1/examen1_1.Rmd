@@ -19,14 +19,14 @@ Datos de [Enron](https://archive.ics.uci.edu/ml/datasets/Bag+of+Words)
 
 ## Carga de datos
 ```{r}
-vocab <- read_csv("vocab.enron.txt", col_names = "word")
+vocab <- read_csv("enron/vocab.enron.txt", col_names = "word")
 vocab <- vocab %>% 
   rowid_to_column("word_id")
 vocab
 ```
 
 ```{r}
-enron <- read_table2("docword.enron.txt", 
+enron <- read_table2("enron/docword.enron.txt", 
                   col_names = c("doc_id", "word_id", "n"),
                   col_types = "iii", 
                   progress = F,
