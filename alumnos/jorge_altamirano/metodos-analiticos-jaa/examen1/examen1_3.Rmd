@@ -1,0 +1,235 @@
+---
+title: "Examen 1 - Ejercicio 3"
+output:
+  html_document:
+    df_print: paged
+---
+
+_175904 - Jorge III Altamirano Astorga_
+
+```{r include=FALSE}
+library(tidyverse)
+options("mc.cores" = 15L)
+library(sparklyr)
+```
+
+```{r}
+# config <- spark_config()
+# config$`sparklyr.shell.driver-memory` <- "32G"
+# config$sparklyr.cores.local <- 4
+# config$spark.memory.fraction <- 0.9
+# sc <- spark_connect(master="local",
+#               # version = "2.1.0",
+#               config = config,
+#               spark_home = "/home/rstudio/.cache/spark/spark-2.2.0-bin-hadoop2.7")
+# spark_set_checkpoint_dir(sc, './checkpoint')
+```
+
+Datos de [MovieLens](http://movielens.org/)
+
+# {.tabset}
+
+## Carga de datos
+
+
+```{r}
+ratings <- read_csv("movielens/ratings.csv", 
+                  col_names = c("userId", "timestamp"),
+                  col_types = "i__i", 
+                  # col_names = c("userId", "movieId", "rating", "timestamp"),
+                  # col_types = "iidi",
+                  skip =  1,
+                  progress = F) 
+tags <- read_csv("movielens/tags.csv", 
+                  col_names = c("userId", "timestamp"),
+                  col_types = "i--i", 
+                  # col_names = c("userId", "movieId", "tag", "timestamp"),
+                  # col_types = "iici",
+                  skip =  1,
+                  progress = F) 
+nrow(ratings)
+nrow(tags)
+ratings <- rbind(ratings, tags) %>% 
+  arrange(timestamp) %>%
+  select(-timestamp) %>%
+  rowid_to_column("id")
+rm(tags)
+nrow(ratings)
+ratings %>% head(n=10)
+```
+
+```{r}
+summary(ratings)
+```
+
+Dividir el set en pruebas y validación.
+
+```{r}
+ratings_1 <- ratings[1:1E6,]
+ratings_2 <- ratings[(1E6+1):nrow(ratings),]
+summary(ratings_1)
+summary(ratings_2)
+```
+
+## Conteos exactos
+
+Del total
+
+```{r}
+n_users <- ratings$userId %>% unique %>% length
+n_recor <- nrow(ratings)
+sprintf("Se encontraron %d usuarios en %d registros. Proporción: %.3f",
+        n_users,
+        n_recor,
+        n_users/n_recor)
+```
+
+Del set de entrenamiento
+
+```{r}
+n_users <- ratings_1$userId %>% unique %>% length
+n_recor <- nrow(ratings_1)
+sprintf("Se encontraron %d usuarios en %d registros. Proporción: %.3f",
+        n_users,
+        n_recor,
+        n_users/n_recor)
+```
+
+Del set de prueba
+
+```{r}
+n_users <- ratings_2$userId %>% unique %>% length
+n_recor <- nrow(ratings_2)
+sprintf("Se encontraron %d usuarios en %d registros. Proporción: %.3f",
+        n_users,
+        n_recor,
+        n_users/n_recor)
+```
+
+## Conteo Probabilístico
+
+### Buckets
+
+```{r}
+m_bits <- 18
+m <- 2^m_bits ## aprox 262,144
+tail_length_lead <- function(bits){
+  bits[-c(1:m_bits)] %>% which.max %>% as.integer
+}
+cubeta <- function(bits){
+  paste(as.character(bits[1:m_bits]), collapse='')
+}
+armonica <- function(x){
+  1/mean(1/x)
+}
+hash_gen <- function(seed){
+  function(x){
+    hash_32 <- digest::digest(x, 'xxhash32', serialize = FALSE, seed = seed) 
+    # Covertimos a bits, tomando de dos en dos:
+    sapply(seq(1, nchar(hash_32), 2), function(x) substr(hash_32, x, x+1)) %>%
+      strtoi(16L) %>%  # a enteros
+      as.raw %>%    #bytes
+      rawToBits()
+    #dig_md5[permutacion]
+  }
+}
+hash_1 <- hash_gen(seed = 175904)
+```
+
+```{r}
+ratings_1hll <- data_frame(num_distintos = 1:(m)) %>% 
+  mutate(id = as.character(ratings_1$userId[(sample.int(nrow(ratings_1), m))])) %>% #m es máx de bits posibles aprox 262,144 ;-)
+  mutate(hash = map(id, hash_1)) %>%
+  mutate(cubeta = map_chr(hash, cubeta)) %>%
+  mutate(tail_1 = map_int(hash, tail_length_lead))
+ratings_1hll %>% head(n=3)
+```
+
+
+
+```{r}
+graph <- ratings_1hll[1:5000,] %>% spread(cubeta, tail_1, fill= 0)  %>%
+        gather(cubeta, tail_1, -num_distintos, -id, -hash) %>%
+        select(num_distintos, cubeta, tail_1) 
+graph <- graph %>% 
+      group_by(cubeta) %>%
+      arrange(num_distintos) %>%
+      mutate(tail_max = cummax(tail_1)) %>%
+      group_by(num_distintos) %>%
+      summarise(media = 0.72*(m*armonica(2^tail_max)))
+ggplot(graph %>% filter(num_distintos > 100), aes(x = num_distintos, y = (media))) + 
+  geom_line() +
+  geom_abline(intercept = 3e4, slope = 100, colour ='red') 
+graph %>% summary
+```
+
+### reintento
+
+```{r}
+n = log2(262144) #máx bits y cubetas
+tail_length_lead <- function(bits){
+  bits[-c(1:m_bits)] %>% which.max %>% as.integer
+}
+cubeta <- function(bits){
+  paste(as.character(bits[1:m_bits]), collapse='')
+}
+armonica <- function(x){
+  1/mean(1/x)
+}
+hash_gen <- function(seed){
+  function(x){
+    hash_32 <- digest::digest(x, 'xxhash32', serialize = FALSE, seed = seed) 
+    # Covertimos a bits, tomando de dos en dos:
+    sapply(seq(1, nchar(hash_32), 2), function(x) substr(hash_32, x, x+1)) %>%
+      strtoi(16L) %>%  # a enteros
+      as.raw %>%    #bytes
+      rawToBits()
+    #dig_md5[permutacion]
+  }
+}
+hash_1 <- hash_gen(seed = 175904)
+```
+
+```{r}
+set.seed(175904)
+n_2 <- 5000
+m_bits <- 12
+ratings_1hll <- data_frame(num_distintos = 1:n_2) %>%
+      mutate(user_id = as.character(
+        ratings_1$userId[sample.int(nrow(ratings_1), n_2)]
+        )
+      ) %>%
+      mutate(tail = map_int(user_id, function(x) { 
+                     hash_1(x) %>% tail_length_lead }), 
+             cubeta = map_chr(user_id, function(x) { 
+                    hash_1(x) %>% cubeta }),
+             tail_max = cummax(tail))
+# df1 <- data_frame(x = 1:n_2, y = sample.int(nrow(ratings_1), n_2), bins = 1E3)
+# ggplot(data = df1, aes(x=x,y=y)) +
+#   geom_jitter(aes(alpha = 1)) ; rm(df1)
+ratings_1hll
+```
+
+```{r}
+ratings_1hll %>% summary
+ratings_1hll$user_id %>% unique %>% length
+```
+```{r}
+graph <- ratings_1hll %>%
+  spread(cubeta, tail, fill= 0) %>%
+  gather(cubeta, tail, -num_distintos, -user_id) %>%
+  select(num_distintos, cubeta, tail) %>%  
+  group_by(cubeta) %>%
+  arrange(num_distintos) %>%
+  mutate(tail_max = cummax(tail)) %>%
+  group_by(num_distintos) %>%
+  summarise(media = 0.72*(2^m_bits*armonica(2^tail_max)))
+graph
+ggplot(graph %>% filter(num_distintos > 100), aes(x = num_distintos, y = media)) + geom_line() +
+  geom_abline(intercept = 2200, slope = 1.8, colour ='red') 
+```
+
+```{r}
+ratings_1hll$cubeta %>% length
+```
+
