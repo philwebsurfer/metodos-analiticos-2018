@@ -1,0 +1,148 @@
+---
+title: "Examen 1 - Ejercicio 1"
+output:
+  html_document:
+    df_print: paged
+---
+
+_175904 - Jorge III Altamirano Astorga_
+
+```{r include=FALSE}
+library(tidyverse)
+options("mc.cores" = 15L)
+library(textreuse)
+```
+
+Datos de [Enron](https://archive.ics.uci.edu/ml/datasets/Bag+of+Words)
+
+# {.tabset}
+
+## Carga de datos
+```{r}
+vocab <- read_csv("enron/vocab.enron.txt", col_names = "word")
+vocab <- vocab %>% 
+  rowid_to_column("word_id")
+vocab
+```
+
+```{r}
+enron <- read_table2("enron/docword.enron.txt", 
+                  col_names = c("doc_id", "word_id", "n"),
+                  col_types = "iii", 
+                  progress = F,
+                  skip = 3)
+enron[1:5,]
+```
+
+```{r}
+qplot(log10(enron$n))
+```
+
+## Join
+
+```{r}
+enron2 <- left_join(enron %>% select(-n), 
+                    vocab, 
+                    by = c("word_id", "word_id"))
+enron2[1:5,]
+```
+
+```{r}
+enron3 <- enron2 %>%
+  select(doc_id, word) %>%
+  group_by(doc_id) %>%
+  summarise(doc = paste(word, collapse = " "), doc_length = length(word)) 
+enron3[1:100,]
+```
+
+## Firmas
+
+```{r}
+set.seed(175904)
+options("mc.cores" = 15L)
+minhash <- minhash_generator(16, seed = 175904)
+corpus <- TextReuseCorpus(text = enron3$doc, 
+                          tokenizer = tokenize_words, 
+                          lowercase = TRUE,
+                          hash_func = minhash,
+                          keep_tokens = TRUE,
+                          keep_text = TRUE, 
+                          skip_short = FALSE)
+```
+
+Estos son los documentos similares
+
+```{r}
+mh <- hashes(corpus)
+similitud <- sapply(mh, function(x) mean(mh[[900]]==x))
+
+#listado de documentos
+sims <- which(similitud > 0.5)
+names(sims) 
+```
+
+Estas son las palabras, las cuales son similares efectivamente:
+
+```{r}
+print("Document 900")
+corpus[[900]]$content
+print("Document 1153")
+corpus[[1153]]$content
+print("Document 2325")
+corpus[[2325]]$content
+print("Document 2435")
+corpus[[2435]]$content
+```
+
+La similitud de Jaccard es 1, son idénticos.
+
+```{r}
+pairwise_compare(corpus[sims], jaccard_similarity, progress = F)
+```
+
+## LSH
+
+```{r}
+options("mc.cores" = 15L)
+n_hashes <- 8
+bands <- 2
+docs_lsh <- c(100, 105, 1400)
+minhashes <- minhash_generator(n_hashes, seed = 175904)
+corpus_lsh <- TextReuseCorpus(
+                text = enron3$doc, 
+                tokenizer = tokenize_words,
+                minhash_func = minhashes,
+                keep_tokens = T,
+                keep_text = T,
+                skip_short = FALSE)
+lsh <- lsh(corpus_lsh, bands = bands, progress =  F)
+lsh %>% sample_n(5)
+```
+
+```{r}
+lsh_100  <- lsh_query(lsh, "doc-100")
+lsh_105  <- lsh_query(lsh, "doc-105")
+lsh_1400 <- lsh_query(lsh, "doc-1400")
+lsh_100; lsh_105; lsh_1400
+```
+
+
+### Similitud de Jaccard
+
+Estos son los datos exactos de las similitudes donde hay "doc-100", como se muestra en el siguiente `pairwise_compare` no se hicieron discrimenaciones por similitud aparecen similitudes bajas.
+
+```{r}
+lsh_100_sims <- c(
+  which(names(corpus_lsh) %in% lsh_100$a ),
+  which(names(corpus_lsh) %in% lsh_100$b))
+pairwise_compare(corpus_lsh[lsh_100_sims], jaccard_similarity)
+```
+
+### Textos
+
+```{r}
+sapply(lsh_100_sims, function(i){
+  sprintf('doc-%d: %s', i, corpus_lsh[[i]]$content)
+       })
+```
+
