@@ -10,7 +10,7 @@ _175904 - Jorge III Altamirano Astorga_
 ```{r include=FALSE}
 library(tidyverse)
 options("mc.cores" = 15L)
-library(sparklyr)
+# library(sparklyr)
 ```
 
 ```{r}
@@ -106,12 +106,26 @@ sprintf("Se encontraron %d usuarios en %d registros. Proporción: %.3f",
         n_users/n_recor)
 ```
 
+Cambiamos los dataframes para que estén como texto la columna de User ID
+
+```{r}
+ratings_1$userId <- as.character(ratings_1$userId)
+ratings_2$userId <- as.character(ratings_2$userId)
+ratings_1 <- ratings_1[,2]
+ratings_2 <- ratings_2[,2]
+glimpse(ratings_1)
+glimpse(ratings_2)
+```
+
+
 ## Conteo Probabilístico
 
 ### Buckets
 
 ```{r}
-m_bits <- 18
+set.seed(752)
+n <- 100000
+m_bits <- 5
 m <- 2^m_bits ## aprox 262,144
 tail_length_lead <- function(bits){
   bits[-c(1:m_bits)] %>% which.max %>% as.integer
@@ -133,103 +147,83 @@ hash_gen <- function(seed){
     #dig_md5[permutacion]
   }
 }
-hash_1 <- hash_gen(seed = 175904)
+hash_1 <- hash_gen(seed = 752)
+# n = log2(262144) #máx bits y cubetas
+# n
+# n_2 <- 5000
+# ratings_1hll <- data_frame(num_distintos = 1:n_2) %>%
+#       mutate(user_id = as.character(
+#         ratings_1$userId[sample.int(nrow(ratings_1), n_2)]
+#         )
+#       ) %>%
+#       mutate(tail = map_int(user_id, function(x) { 
+#                      hash_1(x) %>% tail_length_lead }), 
+#              cubeta = map_chr(user_id, function(x) { 
+#                     hash_1(x) %>% cubeta }),
+#              tail_max = cummax(tail))
 ```
 
 ```{r}
-ratings_1hll <- data_frame(num_distintos = 1:(m)) %>% 
-  mutate(id = as.character(ratings_1$userId[(sample.int(nrow(ratings_1), m))])) %>% #m es máx de bits posibles aprox 262,144 ;-)
-  mutate(hash = map(id, hash_1)) %>%
-  mutate(cubeta = map_chr(hash, cubeta)) %>%
-  mutate(tail_1 = map_int(hash, tail_length_lead))
-ratings_1hll %>% head(n=3)
+ratings_hll <- ratings_1 %>%
+      mutate(
+        n_diferentes = 1:nrow(ratings_1),
+        # n_diferentes = 1:100,map_chr(buckt_tail, function(x) x[2])
+        buckt_tail = map(userId, function(x) { 
+          hash_x = hash_1(x)
+          c(
+            bucket = cubeta(hash_x),
+            tail = tail_length_lead(hash_x)
+          )
+        }),
+        bucket = map_chr(buckt_tail, function(x) x[1]),
+        tail = map_chr(buckt_tail, function(x) x[2]))
+ratings_hll <- ratings_hll[,c(1,2,4,5)]
+ratings_hll$tail <- as.integer(ratings_hll$tail)
+ratings_hll
 ```
 
 
+### Gráfica
+
 
 ```{r}
-graph <- ratings_1hll[1:5000,] %>% spread(cubeta, tail_1, fill= 0)  %>%
-        gather(cubeta, tail_1, -num_distintos, -id, -hash) %>%
-        select(num_distintos, cubeta, tail_1) 
+# graph <- ratings_1hll %>%
+#   spread(cubeta, tail, fill= 0) %>%
+#   gather(cubeta, tail, -num_distintos, -user_id) %>%
+#   select(num_distintos, cubeta, tail) %>%  
+#   group_by(cubeta) %>%
+#   arrange(num_distintos) %>%
+#   mutate(tail_max = cummax(tail)) %>%
+#   group_by(num_distintos) %>%
+#   summarise(media = 0.72*(2^m_bits*armonica(2^tail_max)))
+# graph
+# ggplot(graph %>% filter(num_distintos > 100), aes(x = num_distintos, y = media)) + geom_line() +
+#   geom_abline(intercept = 2200, slope = 1.8, colour ='red') 
+```
+
+```{r}
+graph <- ratings_hll[sample.int(nrow(ratings_hll), (nrow(ratings_hll)*0.1)),] %>%
+  spread(bucket, tail, fill= 0) %>%
+  gather(bucket, tail, -n_diferentes, -userId) %>%
+  select(n_diferentes, bucket, tail)
 graph <- graph %>% 
-      group_by(cubeta) %>%
-      arrange(num_distintos) %>%
-      mutate(tail_max = cummax(tail_1)) %>%
-      group_by(num_distintos) %>%
-      summarise(media = 0.72*(m*armonica(2^tail_max)))
-ggplot(graph %>% filter(num_distintos > 100), aes(x = num_distintos, y = (media))) + 
-  geom_line() +
-  geom_abline(intercept = 3e4, slope = 100, colour ='red') 
-graph %>% summary
-```
-
-### reintento
-
-```{r}
-n = log2(262144) #máx bits y cubetas
-tail_length_lead <- function(bits){
-  bits[-c(1:m_bits)] %>% which.max %>% as.integer
-}
-cubeta <- function(bits){
-  paste(as.character(bits[1:m_bits]), collapse='')
-}
-armonica <- function(x){
-  1/mean(1/x)
-}
-hash_gen <- function(seed){
-  function(x){
-    hash_32 <- digest::digest(x, 'xxhash32', serialize = FALSE, seed = seed) 
-    # Covertimos a bits, tomando de dos en dos:
-    sapply(seq(1, nchar(hash_32), 2), function(x) substr(hash_32, x, x+1)) %>%
-      strtoi(16L) %>%  # a enteros
-      as.raw %>%    #bytes
-      rawToBits()
-    #dig_md5[permutacion]
-  }
-}
-hash_1 <- hash_gen(seed = 175904)
-```
-
-```{r}
-set.seed(175904)
-n_2 <- 5000
-m_bits <- 12
-ratings_1hll <- data_frame(num_distintos = 1:n_2) %>%
-      mutate(user_id = as.character(
-        ratings_1$userId[sample.int(nrow(ratings_1), n_2)]
-        )
-      ) %>%
-      mutate(tail = map_int(user_id, function(x) { 
-                     hash_1(x) %>% tail_length_lead }), 
-             cubeta = map_chr(user_id, function(x) { 
-                    hash_1(x) %>% cubeta }),
-             tail_max = cummax(tail))
-# df1 <- data_frame(x = 1:n_2, y = sample.int(nrow(ratings_1), n_2), bins = 1E3)
-# ggplot(data = df1, aes(x=x,y=y)) +
-#   geom_jitter(aes(alpha = 1)) ; rm(df1)
-ratings_1hll
-```
-
-```{r}
-ratings_1hll %>% summary
-ratings_1hll$user_id %>% unique %>% length
-```
-```{r}
-graph <- ratings_1hll %>%
-  spread(cubeta, tail, fill= 0) %>%
-  gather(cubeta, tail, -num_distintos, -user_id) %>%
-  select(num_distintos, cubeta, tail) %>%  
-  group_by(cubeta) %>%
-  arrange(num_distintos) %>%
+  group_by(bucket) %>%
+  arrange(n_diferentes) %>%
   mutate(tail_max = cummax(tail)) %>%
-  group_by(num_distintos) %>%
-  summarise(media = 0.72*(2^m_bits*armonica(2^tail_max)))
-graph
-ggplot(graph %>% filter(num_distintos > 100), aes(x = num_distintos, y = media)) + geom_line() +
-  geom_abline(intercept = 2200, slope = 1.8, colour ='red') 
+  group_by(n_diferentes) %>%
+  summarise(mean = 0.72*(m*armonica(2^tail_max)))
+ggplot(graph %>% filter(n_diferentes > 1000), aes(x = n_diferentes, y = mean)) + 
+  geom_line() +
+  geom_abline(intercept = 0, slope = 0.018, colour ='red')
 ```
 
 ```{r}
-ratings_1hll$cubeta %>% length
+quantile(1-graph$mean/graph$n_diferentes, probs=c(0.1, 0.5, .9))
+```
+
+Error relativo 
+
+```{r}
+1.04/sqrt(ratings_hll$bucket %>% unique %>% length)
 ```
 
