@@ -154,7 +154,7 @@ sapply(lsh_100_sims, function(i){
 
 _Estas son las palabras que comparten:_
 
-_ address balance bill code consolidate cost credit creditor debt end equity estimated form free fuck full help helped hit home improve incurred interested invite late loan low lower message mind month monthly obligation party payment phone principal program property provide provided rating read reduce remove reply request risk securely send size sources stop thing thousand totally unsubscribe zip_
+_address balance bill code consolidate cost credit creditor debt end equity estimated form free fuck full help helped hit home improve incurred interested invite late loan low lower message mind month monthly obligation party payment phone principal program property provide provided rating read reduce remove reply request risk securely send size sources stop thing thousand totally unsubscribe zip_
 
 2. (LSH) Utiliza 8 bandas de 2 hashes cada una para obtener pares candidatos para similitud. A partir de los candidatos en las cubetas correspondientes, devuelve los 20 mejores candidatos (si existen) para los documentos 100, 105, 1400. Recuerda calcular la similitud exacta para los pares candidatos que consideres. 
 
