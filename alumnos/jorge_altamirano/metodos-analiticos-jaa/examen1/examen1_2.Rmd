@@ -1,26 +1,32 @@
 ---
-title: "Ejercicio 2"
+title: "Examen 1 - Ejercicio 2"
 output: html_notebook
 ---
-Jorge Altamirano / Uriel Miranda
 
-```{r}
+_175904 - Jorge III Altamirano Astorga_
+_177508 - Uriel Miranda Miñón_
+
+```{r include=FALSE}
 library(Rcpp)
 library(Matrix)
 library(tidyverse)
-Rcpp::sourceCpp('../src/factorizacion_mat/descenso_estocastico.cpp')
-Rcpp::sourceCpp('../src/factorizacion_mat/calc_error_bias.cpp')
-recm <- function(calif, pred){
-  sqrt(mean((calif - pred)^2))
-}
+library(sparklyr)
 ```
 
+# {.tabset}
+
+## Carga de Datos
 
 ```{r}
 set.seed(28882)
-muestra_nf <- read_csv('Data/ratings.csv', 
+Rcpp::sourceCpp('../../../../src/factorizacion_mat/descenso_estocastico.cpp')
+Rcpp::sourceCpp('../../../../src/factorizacion_mat/calc_error_bias.cpp')
+recm <- function(calif, pred){
+  sqrt(mean((calif - pred)^2))
+}
+muestra_nf <- read_csv('movielens/ratings.csv', progress = F,
                           col_names = TRUE, na = c("", "NA", "NULL"));
-pelis_nombres <- read_csv('Data/movies.csv', 
+pelis_nombres <- read_csv('movielens/movies.csv',  progress = F,
                           col_names = TRUE, na = c("", "NA", "NULL"));
 names(pelis_nombres) <- c('peli_id','nombre')
 names(muestra_nf) <- c('usuario_id_orig','peli_id','calif','timestamp')
@@ -38,6 +44,7 @@ dim(muestra_nf)
 head(muestra_nf)
 ```
 
+## Entrenamiento y Validación
 
 Construye una muestra de entrenamiento y una de validación:
 
@@ -47,7 +54,7 @@ Una vez considerado el 20% de los usuarios, se separa en un 25% de usuarios para
 
 ```{r}
 set.seed(28882)
-frac <- trunc((max(muestra_nf$usuario_id)*.2),0)
+frac <- trunc((max(muestra_nf$usuario_id)*1.),0)
 muestra_nf <- muestra_nf[1:sum(muestra_nf$usuario_id<=frac),]
 valida_usuarios <- sample(unique(muestra_nf$usuario_id),  max(unique(muestra_nf$usuario_id))*.25)
 valida_pelis <- sample(unique(muestra_nf$peli_id), 2000)
@@ -68,15 +75,21 @@ nrow(dat_entrena) + nrow(dat_valida)
 ```
 
 ```{r}
-rm(list = c('muestra_nf','muestra_nf'))
+# rm(list = c('muestra_nf','muestra_nf'))
 ```
 
 
 ```{r}
-library(sparklyr)
 # configuración para spark
 config <- spark_config()
-#config$`sparklyr.shell.driver-memory` <- "4G"
+config$`sparklyr.shell.driver-memory` <- "48G"
+config$sparklyr.cores.local <- 4
+config$spark.memory.fraction <- 0.9
+sc <- spark_connect(master="local",
+              # version = "2.1.0",
+              config = config,
+              spark_home = "/home/rstudio/.cache/spark/spark-2.2.0-bin-hadoop2.7")
+spark_set_checkpoint_dir(sc, './checkpoint')
 ```
 
 ```{r}
@@ -96,6 +109,9 @@ dat <- dat_entrena %>%
       select(peli_id, usuario_id, calif)
 dat_tbl <- copy_to(sc, dat, overwrite = TRUE)
 ```
+
+## Descenso Estocástico
+
 Utiliza descenso estocástico o mínimos cuadrados alternados para encontrar factores latentes.
 
 Se utiliza el método de mínimos cuadrados con 8 factores latentes.
@@ -119,6 +135,9 @@ preds <- sdf_predict(valida_tbl, modelo) %>% collect() #traemos a R con collect
 ```{r}
 ggplot(preds, aes(x = prediction)) + geom_histogram()
 ```
+
+## Factores Latentes
+
 Evalúa el modelo de factores latentes que ajustaste usando la muestra de validación y ajusta parámetros si es necesario para mejorar el desempeño.
 
 
@@ -133,8 +152,6 @@ preds %>% ungroup %>% summarise(error = recm(calif, prediction))
 ```{r}
 V_df <- collect(modelo$item_factors)
 dim(V_df)
-```
-```{r}
 head(dat_2)
 ```
 
@@ -161,6 +178,7 @@ pred_usuario(4000)
 ```{r}
 pred_usuario(6000)
 ```
+
 ```{r}
 pred_usuario(1333)
 ```
@@ -169,3 +187,22 @@ pred_usuario(1333)
 sparklyr::spark_disconnect_all()
 ```
 
+## Examen
+
+Utilizaremos datos de [movielens](<https://movielens.org>), 
+que están en <https://grouplens.org/datasets/movielens/20m/>: 20 million ratings and 465,000 tag applications applied to 27,000 movies by 138,000 users. 
+
+1. Construye una muestra de entrenamiento y una de validación
+
+_Se muestra en la sección muestra de entrenamiento y validación._
+
+2. Utiliza descenso estocástico o mínimos cuadrados alternados para encontrar factores latentes.
+
+_Se muestra en la sección muestra de entrenamiento y validación._
+
+3. Evalúa el modelo de factores latentes que ajustaste usando la muestra de validación y ajusta parámetros si es necesario para mejorar el desempeño.
+
+
+4. Explica cómo hacer predicciones a partir del modelo (predicción de la calificación 1-5). ¿Qué películas recomendarías para el usuario usuario 4000 y el usuario 6000, y usuario 1333? (que no haya visto).
+
+Nota: si tienes problemas de memoria, por ejemplo, piensa en estrategias para resolverlo. Puedes correrlo en una máquina más grande, o intentar muestrar una fracción relativamente grande de usuarios.
