@@ -1,0 +1,171 @@
+---
+title: "Ejercicio 2"
+output: html_notebook
+---
+Jorge Altamirano / Uriel Miranda
+
+```{r}
+library(Rcpp)
+library(Matrix)
+library(tidyverse)
+Rcpp::sourceCpp('../src/factorizacion_mat/descenso_estocastico.cpp')
+Rcpp::sourceCpp('../src/factorizacion_mat/calc_error_bias.cpp')
+recm <- function(calif, pred){
+  sqrt(mean((calif - pred)^2))
+}
+```
+
+
+```{r}
+set.seed(28882)
+muestra_nf <- read_csv('Data/ratings.csv', 
+                          col_names = TRUE, na = c("", "NA", "NULL"));
+pelis_nombres <- read_csv('Data/movies.csv', 
+                          col_names = TRUE, na = c("", "NA", "NULL"));
+names(pelis_nombres) <- c('peli_id','nombre')
+names(muestra_nf) <- c('usuario_id_orig','peli_id','calif','timestamp')
+head(pelis_nombres)
+```
+
+```{r}
+muestra_nf <- muestra_nf %>% 
+  mutate(usuario_id = as.integer(as.factor(usuario_id_orig)))
+dim(muestra_nf)
+```
+
+
+```{r}
+head(muestra_nf)
+```
+
+
+Construye una muestra de entrenamiento y una de validación:
+
+Se considera el 20 % de los usuarios ya que con mayor cantidad de datos no es posible hacer la carga a Spark.
+
+Una vez considerado el 20% de los usuarios, se separa en un 25% de usuarios para validación y el resto para entrenamiento.
+
+```{r}
+set.seed(28882)
+frac <- trunc((max(muestra_nf$usuario_id)*.2),0)
+muestra_nf <- muestra_nf[1:sum(muestra_nf$usuario_id<=frac),]
+valida_usuarios <- sample(unique(muestra_nf$usuario_id),  max(unique(muestra_nf$usuario_id))*.25)
+valida_pelis <- sample(unique(muestra_nf$peli_id), 2000)
+dat_2 <- muestra_nf %>%
+  mutate(valida_usu = usuario_id %in% valida_usuarios) %>%
+  mutate(valida_peli = peli_id %in% valida_pelis)
+
+dif_movies <- unique(dat_2$peli_id)
+# En validación van aquellas evaluaciones de las películas y
+# usuario que seleccionamos
+dat_valida <- filter(dat_2, valida_usu & valida_peli)
+# En entrenamiento va el resto: algunas evaluaciones de usuarios
+# seleccionados van en entrenamiento, por ejemplo (para películas
+# no seleccionadas en validación)
+dat_entrena <- filter(dat_2, !valida_usu | !valida_peli)
+
+nrow(dat_entrena) + nrow(dat_valida)
+```
+
+```{r}
+rm(list = c('muestra_nf','muestra_nf'))
+```
+
+
+```{r}
+library(sparklyr)
+# configuración para spark
+config <- spark_config()
+#config$`sparklyr.shell.driver-memory` <- "4G"
+```
+
+```{r}
+sc <- spark_connect(master = "local", config = config)
+```
+
+
+```{r}
+spark_set_checkpoint_dir(sc, './checkpoint')
+```
+
+
+```{r}
+media_gral_ent <- mean(dat_entrena$calif)
+dat <- dat_entrena %>% 
+      as_data_frame %>% 
+      select(peli_id, usuario_id, calif)
+dat_tbl <- copy_to(sc, dat, overwrite = TRUE)
+```
+Utiliza descenso estocástico o mínimos cuadrados alternados para encontrar factores latentes.
+
+Se utiliza el método de mínimos cuadrados con 8 factores latentes.
+
+```{r}
+modelo <- ml_als(dat_tbl, 
+              rating_col = 'calif',
+              user_col = 'usuario_id',
+              item_col = 'peli_id', 
+              rank = 8, reg_param = 0.05,
+              checkpoint_interval = 5,
+              max_iter = 30)
+```
+
+
+```{r}
+valida_tbl <- copy_to(sc, dat_valida)
+preds <- sdf_predict(valida_tbl, modelo) %>% collect() #traemos a R con collect
+```
+
+```{r}
+ggplot(preds, aes(x = prediction)) + geom_histogram()
+```
+Evalúa el modelo de factores latentes que ajustaste usando la muestra de validación y ajusta parámetros si es necesario para mejorar el desempeño.
+
+
+La evaluación muestra un desempeño de 79% con los ajustes realizados.
+
+```{r}
+preds$prediction[is.nan(preds$prediction)] <- media_gral_ent
+preds %>% ungroup %>% summarise(error = recm(calif, prediction))
+```
+
+
+```{r}
+V_df <- collect(modelo$item_factors)
+dim(V_df)
+```
+```{r}
+head(dat_2)
+```
+
+Explica cómo hacer predicciones a partir del modelo (predicción de la calificación 1-5). ¿Qué películas recomendarías para el usuario usuario 4000 y el usuario 6000, y usuario 1333? (que no haya visto).
+
+El sistema puede proponer calificaciones para un usuario con base en las calificaciones que posee; por esa razón debemos  ingresar al modelo las películas que no ha calificado el usuario para saber el pronóstico de calificaciones. Con esa información podremos ordenar y por tanto recomendar aquellas que tengan el pronóstico mas alto.
+
+```{r}
+pred_usuario <- function(user){
+  usr_predic <- dif_movies[!((filter(dat_2,usuario_id ==user)$peli_id) == dif_movies)]
+  us <- data_frame(usuario_id = rep(user,length(usr_predic)), peli_id =usr_predic)
+  us_sc <- copy_to(sc, us, overwrite=TRUE)
+  us_pr <-sdf_predict(us_sc, modelo) %>% collect()
+  us_recom<- us_pr[order(us_pr$prediction,decreasing = TRUE),] %>% head %>% left_join(pelis_nombres) %>% select (usuario_id,nombre)
+  us_recom
+}
+```
+
+
+```{r}
+pred_usuario(4000)
+```
+
+```{r}
+pred_usuario(6000)
+```
+```{r}
+pred_usuario(1333)
+```
+
+```{r}
+sparklyr::spark_disconnect_all()
+```
+
