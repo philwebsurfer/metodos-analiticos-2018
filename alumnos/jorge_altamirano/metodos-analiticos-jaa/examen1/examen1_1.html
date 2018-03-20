@@ -124,7 +124,8 @@ $(document).ready(function () {
 </div>
 
 
-<p><em>175904 - Jorge III Altamirano Astorga</em> <em>177508 - Uriel Miranda Miñón</em></p>
+<p><em>175904 - Jorge III Altamirano Astorga</em></p>
+<p><em>177508 - Uriel Miranda Miñón</em></p>
 <p>Datos de <a href="https://archive.ics.uci.edu/ml/datasets/Bag+of+Words">Enron</a></p>
 <div id="section" class="section level1 tabset">
 <h1></h1>
@@ -350,6 +351,27 @@ pairwise_compare(corpus_lsh[lsh_100_sims], jaccard_similarity)</code></pre>
 ## [16] &quot;doc-36262: acceptance affiliate affiliates andor ask basis binding clint contract copies corp create dean didnt enforceable estoppel evidence friend hey julies material meet message met october offer party past person prohibited property receive relevant relied review sole sound strictly talking thought tstrawsvcf wednesday weekend wrote&quot;                                                                                                                                                                                                                                                                                                                                                                                                                                       
 ## [17] &quot;doc-36396: acceptance affiliate affiliates andor ask basis binding clint contract copies corp create dean didnt enforceable estoppel evidence friend hey julies material meet message met michelle october offer party past person prohibited property receive relevant relied review schultz sole sound strictly talking thought tstrawsvcf wednesday weekend wrote&quot;</code></pre>
 </div>
+</div>
+<div id="examen" class="section level2">
+<h2>Examen</h2>
+</div>
+<div id="ejercicio-1-correos-de-enron" class="section level2">
+<h2>Ejercicio 1: Correos de Enron</h2>
+<p>En este ejemplo construiremos una aplicación para devolver rápidamente correos similares a uno dado, en el sentido de que contienen palabras similares. Utilizaremos minhashing/LSH.</p>
+<p>Utilizaremos los datos de correos de Enron de <a href="https://archive.ics.uci.edu/ml/datasets/Bag+of+Words" class="uri">https://archive.ics.uci.edu/ml/datasets/Bag+of+Words</a>. El formato está explicado en el archivo que acompaña los datos (docword.enron y vocab.enron). Considera a las palabras como tejas.</p>
+<ol style="list-style-type: decimal">
+<li>Construye una matriz de firmas (de longitud 16) de minhashing para esta colección. Utiliza la matriz de firmas para encontrar mails similares al 900 (más de 50% de similitud de Jaccard) ¿Qué palabras comparten estos documentos?</li>
+</ol>
+<p><em>Estas son las palabras que comparten:</em></p>
+<p>_ address balance bill code consolidate cost credit creditor debt end equity estimated form free fuck full help helped hit home improve incurred interested invite late loan low lower message mind month monthly obligation party payment phone principal program property provide provided rating read reduce remove reply request risk securely send size sources stop thing thousand totally unsubscribe zip_</p>
+<ol start="2" style="list-style-type: decimal">
+<li>(LSH) Utiliza 8 bandas de 2 hashes cada una para obtener pares candidatos para similitud. A partir de los candidatos en las cubetas correspondientes, devuelve los 20 mejores candidatos (si existen) para los documentos 100, 105, 1400. Recuerda calcular la similitud exacta para los pares candidatos que consideres.</li>
+</ol>
+<p><em>Se muestra el resultado en la pestaña “LSH”.</em></p>
+<ol start="3" style="list-style-type: decimal">
+<li>En cada caso, describe el grupo de candidatos mostrando las palabras más comunes que ocurren en ellos.</li>
+</ol>
+<p><em>Igualmente se muestra el resultado en la pestaña “LSH”.</em></p>
 </div>
 </div>
 
