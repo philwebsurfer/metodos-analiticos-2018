@@ -246,4 +246,4 @@ por timestamp).
 
 _Nuestro conteo exacto fue de 138493 y el probabilístico fue 16710. Incluso utilizando pyspark coincidió. ESto es por la distribución de la muestra._
 
-_Aunque con Sparklyr no lo pudimos realizar, pyspark funcionó de maravilla: ¡alrededor de 30 segundos!_
+_Aunque con Sparklyr no lo pudimos realizar, pyspark funcionó de maravilla: ¡menos de 1 minuto!_
