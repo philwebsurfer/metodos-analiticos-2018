@@ -150,13 +150,6 @@ sapply(lsh_100_sims, function(i){
 
 ## Examen
 
-## Ejercicio 1: Correos de Enron
-
-En este ejemplo construiremos una aplicación para devolver rápidamente
-correos similares a uno dado, en el sentido de que contienen palabras similares. Utilizaremos minhashing/LSH.
-
-Utilizaremos los datos de correos de Enron de <https://archive.ics.uci.edu/ml/datasets/Bag+of+Words>. El formato está explicado  en el archivo que acompaña los datos (docword.enron y vocab.enron). Considera a las palabras como tejas.
-
 1. Construye una matriz de firmas (de longitud 16) de minhashing para esta colección. Utiliza la matriz de firmas para encontrar mails similares al 900 (más de 50% de similitud de Jaccard) ¿Qué palabras comparten estos documentos?
 
 _Estas son las palabras que comparten:_
