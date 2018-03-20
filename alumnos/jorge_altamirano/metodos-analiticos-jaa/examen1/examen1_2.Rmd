@@ -1,9 +1,12 @@
 ---
 title: "Examen 1 - Ejercicio 2"
-output: html_notebook
+output:
+  html_document:
+    df_print: paged
 ---
 
 _175904 - Jorge III Altamirano Astorga_
+
 _177508 - Uriel Miranda Miñón_
 
 ```{r include=FALSE}
@@ -54,7 +57,7 @@ Una vez considerado el 20% de los usuarios, se separa en un 25% de usuarios para
 
 ```{r}
 set.seed(28882)
-frac <- trunc((max(muestra_nf$usuario_id)*1.),0)
+frac <- trunc((max(muestra_nf$usuario_id)*0.2),0)
 muestra_nf <- muestra_nf[1:sum(muestra_nf$usuario_id<=frac),]
 valida_usuarios <- sample(unique(muestra_nf$usuario_id),  max(unique(muestra_nf$usuario_id))*.25)
 valida_pelis <- sample(unique(muestra_nf$peli_id), 2000)
@@ -189,20 +192,22 @@ sparklyr::spark_disconnect_all()
 
 ## Examen
 
-Utilizaremos datos de [movielens](<https://movielens.org>), 
-que están en <https://grouplens.org/datasets/movielens/20m/>: 20 million ratings and 465,000 tag applications applied to 27,000 movies by 138,000 users. 
-
 1. Construye una muestra de entrenamiento y una de validación
 
-_Se muestra en la sección muestra de entrenamiento y validación._
+_Se muestra en la sección "Entrenamiento y Validación"._
 
 2. Utiliza descenso estocástico o mínimos cuadrados alternados para encontrar factores latentes.
 
-_Se muestra en la sección muestra de entrenamiento y validación._
+_Se muestra en la sección "Descenso Estocástico"._
 
 3. Evalúa el modelo de factores latentes que ajustaste usando la muestra de validación y ajusta parámetros si es necesario para mejorar el desempeño.
 
+_Se muestra en la sección "Factores Latentes"._
 
 4. Explica cómo hacer predicciones a partir del modelo (predicción de la calificación 1-5). ¿Qué películas recomendarías para el usuario usuario 4000 y el usuario 6000, y usuario 1333? (que no haya visto).
 
+_El sistema puede proponer calificaciones para un usuario con base en las calificaciones que posee; por esa razón debemos  ingresar al modelo las películas que no ha calificado el usuario para saber el pronóstico de calificaciones. Con esa información podremos ordenar y por tanto recomendar aquellas que tengan el pronóstico mas alto._
+
 Nota: si tienes problemas de memoria, por ejemplo, piensa en estrategias para resolverlo. Puedes correrlo en una máquina más grande, o intentar muestrar una fracción relativamente grande de usuarios.
+
+_Intentamos utilizar un equipo con 64 GB de RAM sin éxito, por eso utilizamos el 20% de los datos._

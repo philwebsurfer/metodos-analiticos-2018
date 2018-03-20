@@ -14,17 +14,6 @@ options("mc.cores" = 15L)
 # library(sparklyr)
 ```
 
-```{r}
-# config <- spark_config()
-# config$`sparklyr.shell.driver-memory` <- "32G"
-# config$sparklyr.cores.local <- 4
-# config$spark.memory.fraction <- 0.9
-# sc <- spark_connect(master="local",
-#               # version = "2.1.0",
-#               config = config,
-#               spark_home = "/home/rstudio/.cache/spark/spark-2.2.0-bin-hadoop2.7")
-# spark_set_checkpoint_dir(sc, './checkpoint')
-```
 
 Datos de [MovieLens](http://movielens.org/)
 

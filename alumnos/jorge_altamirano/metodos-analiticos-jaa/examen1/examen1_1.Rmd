@@ -6,6 +6,7 @@ output:
 ---
 
 _175904 - Jorge III Altamirano Astorga_
+
 _177508 - Uriel Miranda Miñón_
 
 ```{r include=FALSE}
