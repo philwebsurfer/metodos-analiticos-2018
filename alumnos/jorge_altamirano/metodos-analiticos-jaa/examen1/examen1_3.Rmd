@@ -6,12 +6,13 @@ output:
 ---
 
 _175904 - Jorge III Altamirano Astorga_
+
 _177508 - Uriel Miranda Miñón_
 
 ```{r include=FALSE}
 library(tidyverse)
 options("mc.cores" = 15L)
-# library(sparklyr)
+library(sparklyr)
 ```
 
 
@@ -172,24 +173,13 @@ ratings_hll$tail <- as.integer(ratings_hll$tail)
 ratings_hll
 ```
 
-
-### Gráfica
-
+Número de usuarios por conteo probabilístico:
 
 ```{r}
-# graph <- ratings_1hll %>%
-#   spread(cubeta, tail, fill= 0) %>%
-#   gather(cubeta, tail, -num_distintos, -user_id) %>%
-#   select(num_distintos, cubeta, tail) %>%  
-#   group_by(cubeta) %>%
-#   arrange(num_distintos) %>%
-#   mutate(tail_max = cummax(tail)) %>%
-#   group_by(num_distintos) %>%
-#   summarise(media = 0.72*(2^m_bits*armonica(2^tail_max)))
-# graph
-# ggplot(graph %>% filter(num_distintos > 100), aes(x = num_distintos, y = media)) + geom_line() +
-#   geom_abline(intercept = 2200, slope = 1.8, colour ='red') 
+ratings_hll$userId %>% unique %>% length
 ```
+
+## Gráficas
 
 ```{r}
 graph <- ratings_hll[sample.int(nrow(ratings_hll), (nrow(ratings_hll)*0.1)),] %>%
@@ -217,3 +207,43 @@ Error relativo
 1.04/sqrt(ratings_hll$bucket %>% unique %>% length)
 ```
 
+## Sparklyr
+
+```{r}
+config <- spark_config()
+config$`sparklyr.shell.driver-memory` <- "48G"
+config$sparklyr.cores.local <- 15
+config$spark.memory.fraction <- 0.9
+```
+
+```{r}
+sc <- spark_connect(master="local",
+              # version = "2.2.0",
+              config = config,
+              spark_home = "/home/rstudio/.cache/spark/spark-2.2.0-bin-hadoop2.7")
+spark_set_checkpoint_dir(sc, './checkpoint')
+ratings_1_spark <- copy_to(sc, ratings_1)
+sparklyr::
+
+
+spark_disconnect(sc, ratings_1)
+```
+
+## Examen
+
+
+1. Utiliza el algoritmo de hyperloglog para contar el número de
+usuarios distintos en los datos del ejercicio anterior, considerando que el flujo de datos son los ratings (ordénalos primero por timestamp). 
+Utiliza el primer millón de observaciones.
+Haz una gráfica donde el eje horizontal es el número de elementos del flujo vistos y el eje
+vertical es la estimación de hyperloglog de usuarios únicos para cada momento.
+
+_Se realizó en la sección de "Conteo Probabilístico"._
+
+2. Compara la estimación final de hyperloglog con el número
+de usuarios únicos (primer millón de observaciones ordenadas
+por timestamp).
+
+_Nuestro conteo exacto fue de 138493 y el probabilístico fue 16710._
+
+_Aunque con Sparklyr 
