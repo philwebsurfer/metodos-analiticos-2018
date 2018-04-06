@@ -244,6 +244,6 @@ _Se realizó en la sección de "Conteo Probabilístico"._
 de usuarios únicos (primer millón de observaciones ordenadas
 por timestamp).
 
-_Nuestro conteo exacto fue de 138493 y el probabilístico fue 16710._
+_Nuestro conteo exacto fue de 138493 y el probabilístico fue 16710. Incluso utilizando pyspark coincidió. ESto es por la distribución de la muestra._
 
-_Aunque con Sparklyr 
+_Aunque con Sparklyr no lo pudimos realizar, pyspark funcionó de maravilla: ¡alrededor de 30 segundos!_
