@@ -19,6 +19,7 @@ RUN apt-get update \
 	ggraph \
 	itertools \
 	RcppRoll \
+	expm \
     && install2.r --error \
 	--deps TRUE \
 	sparklyr  \

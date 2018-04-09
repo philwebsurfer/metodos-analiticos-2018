@@ -57,7 +57,7 @@ Una vez considerado el 20% de los usuarios, se separa en un 25% de usuarios para
 
 ```{r}
 set.seed(28882)
-frac <- trunc((max(muestra_nf$usuario_id)*0.2),0)
+frac <- trunc((max(muestra_nf$usuario_id)*1.0),0)
 muestra_nf <- muestra_nf[1:sum(muestra_nf$usuario_id<=frac),]
 valida_usuarios <- sample(unique(muestra_nf$usuario_id),  max(unique(muestra_nf$usuario_id))*.25)
 valida_pelis <- sample(unique(muestra_nf$peli_id), 2000)

@@ -1,0 +1,68 @@
+---
+title: 'Sesión 7: 2018/03/05'
+output:
+  html_document:
+    df_print: paged
+---
+
+_175904 - Jorge III Altamirano_
+
+```{r include=FALSE}
+library(sparklyr)
+library(tidyverse)
+library(tidygraph)
+library(visNetwork)
+library(ggraph)
+```
+
+```{r}
+# config <- spark_config()
+# config$`sparklyr.shell.driver-memory` <- "32G"
+# config$sparklyr.cores.local <- 4
+# config$spark.memory.fraction <- 0.9
+# sc <- spark_connect(master="local", 
+#               # version = "2.1.0",
+#               config = config,
+#               spark_home = "/home/rstudio/.cache/spark/spark-2.2.0-bin-hadoop2.7")
+# spark_set_checkpoint_dir(sc, './checkpoint')
+```
+
+```{r}
+g <- play_erdos_renyi(n = 100, p = 0.1, directed = FALSE) %>% 
+  as_tbl_graph()
+edges <- g %>% activate(edges) %>% as_data_frame
+set.seed(13)
+visNetwork(nodes = data_frame(id = 1:100, label = 1:100), 
+           edges, 
+           width = "100%") %>%
+  visPhysics(solver ='forceAtlas2Based')
+```
+
+```{r}
+ggraph(g, layout = 'kk') +
+  geom_edge_link() +
+  geom_node_point(size = 2, colour = 'salmon') +
+  theme_graph()
+```
+
+```{r}
+ggraph(g, layout = 'fr') +
+  geom_edge_link() +
+  geom_node_point(size = 2, colour = 'salmon') +
+  theme_graph()
+```
+
+```{r}
+ggraph(g, layout = 'graphopt') +
+  geom_edge_link() +
+  geom_node_point(size = 2, colour = 'salmon') +
+  theme_graph()
+```
+
+```{r}
+ggraph(g, layout = 'gem') +
+  geom_edge_link() +
+  geom_node_point(size = 2, colour = 'salmon') +
+  theme_graph()
+```
+
