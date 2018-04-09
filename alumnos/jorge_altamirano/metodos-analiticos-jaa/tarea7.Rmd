@@ -11,7 +11,7 @@ _175904 - Jorge III Altamirano Astorga_
 
 Considera la siguiente gráfica:
 
-```{r, message=FALSE, warning=FALSE}
+```{r message=FALSE, warning=FALSE, include=FALSE}
 library(tidyverse)
 library(ggraph)
 library(igraph)
@@ -221,6 +221,8 @@ t(as.matrix(M)) %*% t(as.matrix(M)) %*% v %>% as.vector()
 7. Explica por qué en los dos ejemplos las importancias de pagerank asignadas no son
 satisfactorias para el problema de asignar importancia a páginas web.
 
+Porque la propiedad de la teletransportación siempre es válida y un _usuario_ siempre va a poderse mover de una a otra página.
+
 ## 9
 
 8. Considera ahora la gráfica
@@ -304,7 +306,7 @@ M.2
 
 ```{r}
 sol <- eigen(t(M.2))
-sol$vectors[,1]
+abs(as.numeric(sol$vectors[,1]))/sum(abs(as.numeric(sol$vectors)))
 sol$values
 ```
 
@@ -329,3 +331,5 @@ sapply(1:30, function(i){
 12. Explica por qué el enfoque de los dos incisos anteriores no es tan apropiado
 para gráficas muy grandes. Repasa el algoritmo de pagerank que vimos al final
 de la clase anterior.
+
+Porque es demasiado grande para poderse visualizar e intepretar.
