@@ -47,7 +47,7 @@ $0.25 \times 0.33 \times 0.0065 \times 0.52 \times 0.68 = 0.000189618 \leftarrow
 
 Smoothed
 
-$P(i|<s>) = 0.25$
+$P(i|<s>) = \frac{n_1+1}{9332+V} = \frac{2333+1}{9332+1446}=0.22$
 
 $P(want|i) = 0.21$
 
@@ -57,7 +57,8 @@ $P(food|chinese) = 0.052$
 
 $P(</s>|food) = 0.68$
 
-$ 0.25 \times 0.21 \times 0.0029 \times 0.052 \times 0.68 = 0.00000538356 \leftarrow smoothed$
+
+$0.25 \times 0.21 \times 0.0029 \times 0.052 \times 0.68 = 0.00000538356 \leftarrow smoothed$
 
 
 ```{r}
@@ -78,7 +79,7 @@ log_prob <- function(textos, n_gramas, n = 2, laplace = FALSE, delta = 0.001){
     log_probs <- df_tokens[["log_p"]]
   }
   log_probs <- split(log_probs, df_tokens$id)
-  sapply(log_probs, mean)
+  sapply(log_probs, sum)
 }
 normalizar <- function(texto, vocab = NULL){
   texto <- gsub("\\.?\\s*$", "  _ss_", texto)
@@ -122,6 +123,7 @@ n_gramas <- list(unigramas = mod_uni,
 Sin smoothing
 
 ```{r}
+options(scipen=999)
 textos = c("i want chinese food")
 exp(log_prob(textos, n_gramas, n = 2))
 ```
@@ -162,7 +164,7 @@ df_tokens
 Which of the two probabilities you computed in the previous exercise is higher,
 unsmoothed or smoothed? Explain why.
 
-_Unsmoothed: specially for bigrams, due to the fact that not always are the bigrams present in the corpus, even though they're valid language words. So, as we saw in class, those are not assigned 0, but instead a add a small $ \delta $, and this distributes the probs across, lowering the overall prob._
+_Unsmoothed: specially for bigrams, due to the fact that not always are the bigrams present in the corpus, even though they're valid language words. So, as we saw in class, those are not assigned 0, but instead a add a small_ $ \delta $, _and this distributes the probs across, lowering the overall prob._
 
 
 ### 4.4
@@ -175,11 +177,11 @@ We are given the following corpus, modified from the one in the chapter:
 &lt;s&gt; I do not like green eggs and Sam &lt;/s&gt;
 </pre>
 
-Using a bigram language model with add-one smoothing, what is $ P(Sam | am) $ ? Include &lt;s&gt; and &lt;/s&gt; in your counts just like any other token.
+Using a bigram language model with add-one smoothing, what is $P(Sam | am)$ ? Include &lt;s&gt; and &lt;/s&gt; in your counts just like any other token.
 
 Handmade calculation:
 
-$P(Sam|am) = \frac{2+1}{4+V} = \frac{1+1}{2+V} = \frac{2}{11} 0.1818182$
+$P(Sam|am) = \frac{2+1}{4+V} = \frac{2+1}{2+V} = \frac{3}{3+11} = 0.2142857$
 
 
 ```{r}
@@ -232,7 +234,7 @@ of the four possible 2 word sentences over the alphabet {a,b} is 1.0, and the
 sum of the probability of all possible 3 word sentences over the alphabet {a,b}
 is also 1.0.
 
-$ Para\ <s>\ a\ b $
+$Para\ <s>\ a\ b$
 
 $P(a|<s>) = \frac{2}{3} = 0.667$
 
@@ -452,5 +454,20 @@ big_model %>% closest_to(vector, n = 10) %>% filter(word != "frecuentemente")
 verbo <- big_model[["comer"]] - big_model[["comida"]]
 vector <-  big_model[["beber"]] + verbo
 big_model %>% closest_to(vector, n = 10) %>% filter(word != "comer")
+```
+
+
+```{r}
+vectores = big_model[[c("comer", "beber"), average = F]] 
+sims <- big_model[1:5000,] %>%  # las 5000 palabras más comunes
+        cosineSimilarity(vectores) %>%
+        as.data.frame() %>%
+        rownames_to_column() %>%
+        tibble::as_data_frame()
+similares <- sims %>%
+  filter_at(vars(-rowname), any_vars(. > 0.21)) 
+similares <- similares %>% arrange(desc(beber), desc(comer)) %>% head(80)
+ggplot(similares, aes(x = comer, y = beber, label = rowname)) +
+  geom_text_repel()
 ```
 
