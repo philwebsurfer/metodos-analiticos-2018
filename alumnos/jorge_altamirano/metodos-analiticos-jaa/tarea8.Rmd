@@ -29,6 +29,37 @@ Calculate the probability of the sentence i want chinese food. Give two
 probabilities, one using Fig. 4.2, and another using the add-1 smoothed table
 in Fig. 4.6
 
+Dos respuesta:
+
+Por cálculo manual:
+
+$P(i|<s>) = 0.25$
+
+$P(want|i) = 0.33$
+
+$P(chinese|want) = 0.0065$
+
+$P(food|chinese) = 0.52$
+
+$P(</s>|food) = 0.68$
+
+$0.25 \times 0.33 \times 0.0065 \times 0.52 \times 0.68 = 0.000189618 \leftarrow unsmoothed$
+
+Smoothed
+
+$P(i|<s>) = 0.25$
+
+$P(want|i) = 0.21$
+
+$P(chinese|want) = 0.0029$
+
+$P(food|chinese) = 0.052$
+
+$P(</s>|food) = 0.68$
+
+$ 0.25 \times 0.21 \times 0.0029 \times 0.052 \times 0.68 = 0.00000538356 \leftarrow smoothed$
+
+
 ```{r}
 log_prob <- function(textos, n_gramas, n = 2, laplace = FALSE, delta = 0.001){
   df <- data_frame(id = 1:length(textos), txt = textos) %>%
@@ -87,19 +118,18 @@ n_gramas <- list(unigramas = mod_uni,
                  trigramas = mod_tri)
 ```
 
+
 Sin smoothing
 
 ```{r}
 textos = c("i want chinese food")
-log_prob(textos, n_gramas, n = 1)
-log_prob(textos, n_gramas, n = 2)
+exp(log_prob(textos, n_gramas, n = 2))
 ```
 
 Con smoothing
 
 ```{r}
-log_prob(textos, n_gramas, n = 1, laplace = T)
-log_prob(textos, n_gramas, n = 2, laplace = T)
+exp(log_prob(textos, n_gramas, n = 2, laplace = T))
 ```
 
 ```{r}
@@ -132,7 +162,7 @@ df_tokens
 Which of the two probabilities you computed in the previous exercise is higher,
 unsmoothed or smoothed? Explain why.
 
-_Unsmoothed: specially for bigrams, due to the fact that not always are the bigrams present in the corpus, even though they're valid language words. So, as we saw in class, those are not assigned 0, but instead a add a small $ \delta $.
+_Unsmoothed: specially for bigrams, due to the fact that not always are the bigrams present in the corpus, even though they're valid language words. So, as we saw in class, those are not assigned 0, but instead a add a small $ \delta $, and this distributes the probs across, lowering the overall prob._
 
 
 ### 4.4
@@ -146,6 +176,11 @@ We are given the following corpus, modified from the one in the chapter:
 </pre>
 
 Using a bigram language model with add-one smoothing, what is $ P(Sam | am) $ ? Include &lt;s&gt; and &lt;/s&gt; in your counts just like any other token.
+
+Handmade calculation:
+
+$P(Sam|am) = \frac{2+1}{4+V} = \frac{1+1}{2+V} = \frac{2}{11} 0.1818182$
+
 
 ```{r}
 corpus_2 = c("<s> I am Sam </s>",
@@ -196,6 +231,40 @@ across all sentence lengths by showing that the sum of the probability
 of the four possible 2 word sentences over the alphabet {a,b} is 1.0, and the
 sum of the probability of all possible 3 word sentences over the alphabet {a,b}
 is also 1.0.
+
+$ Para\ <s>\ a\ b $
+
+$P(a|<s>) = \frac{2}{3} = 0.667$
+
+$P(b|a) = \frac{1}{3} = 0.333$
+
+$P(a|<s>) + P(b|a) \approx 1.00$
+
+
+$Para\ <s>\ b\ b$
+
+$P(b|<s>) = \frac{2}{3} = 0.667$
+
+$P(b|b) = \frac{1}{3} = 0.333$
+
+$P(b|<s>) + P(b|b) \approx 1.00$
+
+$Para\ <s>\ b\ a$
+
+$P(b|<s>) = \frac{2}{3} = 0.667$
+
+$P(a|b) = \frac{1}{3} = 0.333$
+
+$P(b|<s>) + P(a|b) \approx 1.00$
+
+$Para\ <s>\ b\ a$
+
+$P(a|<s>) = \frac{2}{3} = 0.667$
+
+$P(a|a) = \frac{1}{3} = 0.333$
+
+$P(a|<s>) + P(a|a) \approx 1.00$
+
 
 ```{r}
 log_prob_2 <- function(textos, n_gramas, n = 2, laplace = FALSE, delta = 0.001){
@@ -257,17 +326,31 @@ in terms of various N-gram counts and V. Use the notation `c(w1,w2,w3)` to
 denote the number of times that trigram $(w1,w2,w3)$ occurs in the corpus, and
 so on for bigrams and unigrams.
 
+$$
+P(w_3|w_1,w_2) = \frac{C(w_1 w_2 w_3)+1}{C(w_2 w_3)+V} \leftarrow as\ seen\ on\ book
+$$
 
+$$
+P(w_3|w_1,w_2) = \frac{C(w_1 w_2 w_3) + \delta} {C(w_2 w_3) + \delta V} \leftarrow as\ seen\ on\ class
+$$ 
 
 ## Pregunta 2 {.tabset}
 
 Baja el archivo noticias_vectors.bin (ver instrucciones en doc/ en el repositorio), o ajusta un modelo word2vec como arriba hicimos. También puedes intentar con un modelo más grande como [en esta liga](http://crscardellino.me/SBWCE/). Haz algunos experimentos como los de la sección [7.12](https://clever-mestorf-ee3f54.netlify.com/n-gramas-y-modelos-de-lenguaje.html#esprep): palabras más similares, plurales/singulares, femenino/masculino. Identifica fallas y aspectos interesantes de estos modelos.
 
-### Modelo "Pequeño"
+### Modelo "Pequeño" {.tabset}
+
+#### -
+
+Page intentionally left in blank
+
+#### Carga del modelo
 
 ```{r}
 model <- read.binary.vectors("noticias_vectors.word2vec.bin") %>% invisible
 ```
+
+#### Pruebas 
 
 ```{r}
 model %>% closest_to("primer", n = 5)
@@ -278,6 +361,7 @@ model %>% closest_to("madrid", n = 5)
 ```{r}
 model %>% closest_to(c("primer", "españa", "madrid"), n = 20)
 ```
+
 
 ```{r}
 vectores = model[[c("españa", "madrid"),
@@ -292,12 +376,38 @@ ggplot(similares, aes(x = españa, y =madrid, label = rowname)) +
   geom_text_repel()
 ```
 
-### Modelo grande
+```{r}
+plural_1 <- model[["mujeres"]] - model[["mujer"]]
+vector <-  model[["hombre"]] + plural_1
+model %>% closest_to(vector, n = 10) %>% filter(word != "mujer")
+```
+
 
 ```{r}
+fem_1 <- model[["españolas"]] - model[["españoles"]]
+vector <-  model[["europeas"]] + fem_1
+model %>% closest_to(vector, n = 5) %>% filter(word != "europeas")
+```
+
+```{r}
+adv <- model[["frecuentemente"]] - model[["frecuente"]]
+vector <-  model[["raramente"]] + adv
+model %>% closest_to(vector, n = 10) %>% filter(word != "frecuentemente")
+```
+
+### Modelo grande {.tabset}
+
+#### - 
+
+Page intentionally left in blank
+
+#### Carga de Modelo 
+
+```{r message=FALSE, warning=FALSE, paged.print=FALSE}
 big_model <- read.binary.vectors("crscardellino.me.word2vec.bin")
 ```
 
+#### Pruebas
 
 ```{r}
 big_model %>% closest_to(c("primer", "españa", "madrid"), n = 20)
@@ -311,7 +421,36 @@ sims <- big_model[1:5000,] %>%  # las 5000 palabras más comunes
         as.data.frame() %>%
         rownames_to_column() %>%
         tibble::as_data_frame()
-similares <- sims %>% filter_at(vars(-rowname), any_vars(. > 0.21))  
+similares <- sims %>%
+  filter_at(vars(-rowname), any_vars(. > 0.21)) 
+similares <- similares %>% arrange(desc(madrid), desc(españa)) %>% head(80)
 ggplot(similares, aes(x = españa, y =madrid, label = rowname)) +
   geom_text_repel()
 ```
+
+
+```{r}
+plural_2 <- big_model[["mujeres"]] - big_model[["mujer"]]
+vector <-  big_model[["hombre"]] + plural_2
+big_model %>% closest_to(vector, n = 10) %>% filter(word != "mujer")
+```
+
+
+```{r}
+fem_2 <- big_model[["españolas"]] - big_model[["españoles"]]
+vector <-  big_model[["europeas"]] + fem_2
+big_model %>% closest_to(vector, n = 10) %>% filter(word != "europeas")
+```
+
+```{r}
+adv <- big_model[["frecuentemente"]] - big_model[["frecuente"]]
+vector <-  big_model[["raramente"]] + adv
+big_model %>% closest_to(vector, n = 10) %>% filter(word != "frecuentemente")
+```
+
+```{r}
+verbo <- big_model[["comer"]] - big_model[["comida"]]
+vector <-  big_model[["beber"]] + verbo
+big_model %>% closest_to(vector, n = 10) %>% filter(word != "comer")
+```
+
