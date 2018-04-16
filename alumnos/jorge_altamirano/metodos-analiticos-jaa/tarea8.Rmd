@@ -1,0 +1,317 @@
+---
+title: 'Tarea 8: 15/04/2018'
+output:
+  html_document:
+    df_print: paged
+---
+
+_Jorge III Altamirano Astorga - 175904_
+
+```{r include=FALSE}
+library(tidyverse)
+library(tidytext)
+if(!require(wordVectors)){
+  devtools::install_github("bmschmidt/wordVectors")
+}
+library(wordVectors)
+library(ggrepel)
+```
+
+# {.tabset}
+
+## Pregunta 1 {.tabset}
+
+Resuelve los ejercicios 4.2-4.6 de nuestra [referencia de esta sección](https://web.stanford.edu/~jurafsky/slp3/4.pdf).
+
+### 4.2
+
+Calculate the probability of the sentence i want chinese food. Give two
+probabilities, one using Fig. 4.2, and another using the add-1 smoothed table
+in Fig. 4.6
+
+```{r}
+log_prob <- function(textos, n_gramas, n = 2, laplace = FALSE, delta = 0.001){
+  df <- data_frame(id = 1:length(textos), txt = textos) %>%
+         mutate(txt = normalizar(txt))
+  token_nom <- paste0('w_n_', rev(seq(1:n)) - 1)
+  df_tokens <- df %>% group_by(id) %>%
+                unnest_tokens(ngrama, txt, 
+                token = "ngrams", n = n) %>%
+                separate(ngrama, token_nom, " ") %>%
+                left_join(n_gramas[[n]], by = token_nom)
+  if(laplace){
+    V <- nrow(n_gramas[[1]])
+    log_probs <- log(df_tokens[["num"]] + delta) - log(df_tokens[["denom"]] + delta*V )
+    log_probs[is.na(log_probs)] <- log(1/V)
+  } else {
+    log_probs <- df_tokens[["log_p"]]
+  }
+  log_probs <- split(log_probs, df_tokens$id)
+  sapply(log_probs, mean)
+}
+normalizar <- function(texto, vocab = NULL){
+  texto <- gsub("\\.?\\s*$", "  _ss_", texto)
+  texto <- tolower(texto)
+  texto <- gsub("\\s+", " ", texto)
+  texto <- gsub("\\.[^0-9]", " _ss_ _s_ ", texto)
+  texto <- gsub("[«»]", "", texto) 
+  texto <- gsub(";", " _punto_coma_ ", texto) 
+  texto <- gsub("\\:", " _dos_puntos_ ", texto) 
+  texto <- gsub("\\,[^0-9]", " _coma_ ", texto) 
+  texto <- paste("_s_ _s_", texto)
+  texto
+}
+conteo_ngramas <- function(corpus, n = 1, vocab = NULL){
+  token_nom <- paste0('w_n_', rev(seq(1:n)) - 1)
+  token_cond <- token_nom[-length(token_nom)]
+  ngramas_df <- corpus %>% 
+                unnest_tokens(ngrama, txt, token = "ngrams", n = n)
+  frec_ngramas <- ngramas_df %>% group_by(ngrama) %>%
+                  summarise(num = length(ngrama)) %>%
+                  separate(ngrama, token_nom, sep=' ') %>%
+                  group_by(!!!rlang::syms(token_cond)) %>%
+                  mutate(denom = sum(num)) %>%
+                  ungroup %>%
+                  mutate(log_p = log(num) - log(denom))
+  frec_ngramas
+}
+periodico <- read_lines(file='berp.txt', progress = FALSE)
+periodico_m <- data_frame(txt = periodico) %>%
+                mutate(id = row_number()) %>%
+                mutate(txt = normalizar(txt))
+mod_uni <- conteo_ngramas(periodico_m, n = 1)
+mod_bi  <- conteo_ngramas(periodico_m, n = 2)
+mod_tri <- conteo_ngramas(periodico_m, n = 3)
+n_gramas <- list(unigramas = mod_uni,
+                 bigramas  = mod_bi,
+                 trigramas = mod_tri)
+```
+
+Sin smoothing
+
+```{r}
+textos = c("i want chinese food")
+log_prob(textos, n_gramas, n = 1)
+log_prob(textos, n_gramas, n = 2)
+```
+
+Con smoothing
+
+```{r}
+log_prob(textos, n_gramas, n = 1, laplace = T)
+log_prob(textos, n_gramas, n = 2, laplace = T)
+```
+
+```{r}
+n <- 1
+df <- data_frame(id = 1:length(textos), txt = textos) %>%
+         mutate(txt = normalizar(txt))
+token_nom <- paste0('w_n_', rev(seq(1:n)) - 1)
+df_tokens <- df %>% group_by(id) %>%
+                unnest_tokens(ngrama, txt, 
+                token = "ngrams", n = n) %>%
+                separate(ngrama, token_nom, " ") %>%
+                left_join(n_gramas[[n]], by = token_nom)
+df_tokens
+```
+```{r}
+n <- 2
+df <- data_frame(id = 1:length(textos), txt = textos) %>%
+         mutate(txt = normalizar(txt))
+token_nom <- paste0('w_n_', rev(seq(1:n)) - 1)
+df_tokens <- df %>% group_by(id) %>%
+                unnest_tokens(ngrama, txt, 
+                token = "ngrams", n = n) %>%
+                separate(ngrama, token_nom, " ") %>%
+                left_join(n_gramas[[n]], by = token_nom)
+df_tokens
+```
+
+### 4.3 
+
+Which of the two probabilities you computed in the previous exercise is higher,
+unsmoothed or smoothed? Explain why.
+
+_Unsmoothed: specially for bigrams, due to the fact that not always are the bigrams present in the corpus, even though they're valid language words. So, as we saw in class, those are not assigned 0, but instead a add a small $ \delta $.
+
+
+### 4.4
+
+We are given the following corpus, modified from the one in the chapter:
+<pre>
+&lt;s&gt; I am Sam &lt;/s&gt;
+&lt;s&gt; Sam I am &lt;/s&gt;
+&lt;s&gt; I am Sam &lt;/s&gt;
+&lt;s&gt; I do not like green eggs and Sam &lt;/s&gt;
+</pre>
+
+Using a bigram language model with add-one smoothing, what is $ P(Sam | am) $ ? Include &lt;s&gt; and &lt;/s&gt; in your counts just like any other token.
+
+```{r}
+corpus_2 = c("<s> I am Sam </s>",
+           "<s> Sam I am </s>",
+           "<s> I am Sam </s>",
+           "<s> I do not like green eggs and Sam </s>")
+corpus_2m <- data_frame(txt = corpus_2) %>%
+                mutate(id = row_number()) %>%
+                mutate(txt = normalizar(txt))
+mod_uni <- conteo_ngramas(corpus_2m, n = 1)
+mod_bi  <- conteo_ngramas(corpus_2m, n = 2)
+mod_tri <- conteo_ngramas(corpus_2m, n = 3)
+n_gramas_2 <- list(unigramas = mod_uni,
+                 bigramas  = mod_bi,
+                 trigramas = mod_tri)
+textos_2 <- c("Sam", "Sam am")
+log_prob(textos_2, n_gramas_2, n = 2, laplace = T)
+```
+
+```{r}
+n <- 2
+df <- data_frame(id = 1:length(textos_2), txt = textos_2) %>%
+         mutate(txt = normalizar(txt))
+token_nom <- paste0('w_n_', rev(seq(1:n)) - 1)
+df_tokens <- df %>% group_by(id) %>%
+                unnest_tokens(ngrama, txt, 
+                token = "ngrams", n = n) %>%
+                separate(ngrama, token_nom, " ") %>%
+                left_join(n_gramas[[n]], by = token_nom)
+df_tokens
+```
+
+
+### 4.5
+
+Suppose we didn’t use the end-symbol &lt;/s&gt;. Train an unsmoothed bigram
+grammar on the following training corpus without using the end-symbol &lt;/s&gt;:
+
+<pre>
+&lt;s&gt; a b
+&lt;s&gt; b b
+&lt;s&gt; b a
+&lt;s&gt; a a
+</pre>
+
+Demonstrate that your bigram model does not assign a single probability distribution
+across all sentence lengths by showing that the sum of the probability
+of the four possible 2 word sentences over the alphabet {a,b} is 1.0, and the
+sum of the probability of all possible 3 word sentences over the alphabet {a,b}
+is also 1.0.
+
+```{r}
+log_prob_2 <- function(textos, n_gramas, n = 2, laplace = FALSE, delta = 0.001){
+  df <- data_frame(id = 1:length(textos), txt = textos) %>%
+         mutate(txt = normalizar_2(txt))
+  token_nom <- paste0('w_n_', rev(seq(1:n)) - 1)
+  df_tokens <- df %>% group_by(id) %>%
+                unnest_tokens(ngrama, txt, 
+                token = "ngrams", n = n) %>%
+                separate(ngrama, token_nom, " ") %>%
+                left_join(n_gramas[[n]], by = token_nom)
+  if(laplace){
+    V <- nrow(n_gramas[[1]])
+    log_probs2 <- log(df_tokens[["num"]] + delta) - log(df_tokens[["denom"]] + delta*V )
+    log_probs2[is.na(log_probs2)] <- log(1/V)
+  } else {
+    log_probs2 <- df_tokens[["log_p"]]
+  }
+  log_probs2 <- split(log_probs2, df_tokens$id)
+  sapply(log_probs2, mean)
+}
+normalizar_2 <- function(texto, vocab = NULL){
+  texto <- gsub("\\.?$", "", texto)
+  texto <- tolower(texto)
+  texto <- gsub("\\s+", " ", texto)
+  texto <- gsub("\\.[^0-9]", " _ss_ _s_ ", texto)
+  texto <- gsub("[«»]", "", texto) 
+  texto <- gsub(";", " _punto_coma_ ", texto) 
+  texto <- gsub("\\:", " _dos_puntos_ ", texto) 
+  texto <- gsub("\\,[^0-9]", " _coma_ ", texto) 
+  texto <- paste("_s_ _s_", texto)
+  texto
+}
+corpus_3 <- c("<s> a b",
+             "<s> b b",
+             "<s> b a",
+             "<s> a a")
+corpus_3m <- data_frame(txt = corpus_3) %>%
+                mutate(id = row_number()) %>%
+                mutate(txt = normalizar(txt))
+mod_uni <- conteo_ngramas(corpus_3m, n = 1)
+mod_bi  <- conteo_ngramas(corpus_3m, n = 2)
+mod_tri <- conteo_ngramas(corpus_3m, n = 3)
+n_gramas_3<- list(unigramas = mod_uni,
+                 bigramas  = mod_bi,
+                 trigramas = mod_tri)
+
+exp(log_prob_2(c("<s>a b"), n_gramas_3, n = 2, laplace = F, delta = 0.0000001))
+exp(log_prob_2(c("<s>b a"), n_gramas_3, n = 2, laplace = F, delta = 0.0000001))
+```
+
+
+### 4.6
+
+Suppose we train a trigram language model with add-one smoothing on a
+given corpus. The corpus contains V word types. Express a formula for estimating
+$P(w3|w1,w2)$, where $w3$ is a word which follows the bigram $(w1,w2)$,
+in terms of various N-gram counts and V. Use the notation `c(w1,w2,w3)` to
+denote the number of times that trigram $(w1,w2,w3)$ occurs in the corpus, and
+so on for bigrams and unigrams.
+
+
+
+## Pregunta 2 {.tabset}
+
+Baja el archivo noticias_vectors.bin (ver instrucciones en doc/ en el repositorio), o ajusta un modelo word2vec como arriba hicimos. También puedes intentar con un modelo más grande como [en esta liga](http://crscardellino.me/SBWCE/). Haz algunos experimentos como los de la sección [7.12](https://clever-mestorf-ee3f54.netlify.com/n-gramas-y-modelos-de-lenguaje.html#esprep): palabras más similares, plurales/singulares, femenino/masculino. Identifica fallas y aspectos interesantes de estos modelos.
+
+### Modelo "Pequeño"
+
+```{r}
+model <- read.binary.vectors("noticias_vectors.word2vec.bin") %>% invisible
+```
+
+```{r}
+model %>% closest_to("primer", n = 5)
+model %>% closest_to("españa", n = 5)
+model %>% closest_to("madrid", n = 5)
+```
+
+```{r}
+model %>% closest_to(c("primer", "españa", "madrid"), n = 20)
+```
+
+```{r}
+vectores = model[[c("españa", "madrid"),
+                  average = F]]
+sims <- model[1:5000,] %>%  # las 5000 palabras más comunes
+        cosineSimilarity(vectores) %>%
+        as.data.frame() %>%
+        rownames_to_column() %>%
+        tibble::as_data_frame()
+similares <- sims %>% filter_at(vars(-rowname), any_vars(. > 0.6))  
+ggplot(similares, aes(x = españa, y =madrid, label = rowname)) +
+  geom_text_repel()
+```
+
+### Modelo grande
+
+```{r}
+big_model <- read.binary.vectors("crscardellino.me.word2vec.bin")
+```
+
+
+```{r}
+big_model %>% closest_to(c("primer", "españa", "madrid"), n = 20)
+```
+
+```{r}
+vectores = big_model[[c("españa", "madrid"),
+                  average = F]]
+sims <- big_model[1:5000,] %>%  # las 5000 palabras más comunes
+        cosineSimilarity(vectores) %>%
+        as.data.frame() %>%
+        rownames_to_column() %>%
+        tibble::as_data_frame()
+similares <- sims %>% filter_at(vars(-rowname), any_vars(. > 0.21))  
+ggplot(similares, aes(x = españa, y =madrid, label = rowname)) +
+  geom_text_repel()
+```
