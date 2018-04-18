@@ -7,7 +7,7 @@ RUN mkdir /home/rstudio/.cache \
 ENV RSTUDIO_SPARK_HOME /home/rstudio/.cache/spark/spark-2.0.2-bin-hadoop2.7
 
 RUN apt-get update \ 
-    && apt-get install -y libudunits2-dev \
+    && apt-get install -y libudunits2-dev python python-dev python-pip \
     && install2.r --error \
 	arules \
 	arulesViz \
@@ -28,7 +28,6 @@ RUN apt-get update \
         tidygraph \
         tidyverse \
         tidytext \
-        wordVectors \
         ggrepel \
         tsne \
         devtools \
