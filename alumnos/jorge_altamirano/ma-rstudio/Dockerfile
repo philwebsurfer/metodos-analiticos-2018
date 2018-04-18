@@ -20,11 +20,24 @@ RUN apt-get update \
 	itertools \
 	RcppRoll \
 	expm \
+	igraphdata \
+        igraph \
+        expm \
+        igraphdata \
+        visNetwork \
+        tidygraph \
+        tidyverse \
+        tidytext \
+        wordVectors \
+        ggrepel \
+        tsne \
+        devtools \
     && install2.r --error \
 	--deps TRUE \
 	sparklyr  \
-    && r -e 'devtools::install_github("rstudio/sparklyr")' && \
-    && r -e 'sparklyr::spark_install()'
+    && r -e 'devtools::install_github("rstudio/sparklyr")' \
+    && r -e 'sparklyr::spark_install()' \
+    && r -e 'devtools::install_github("bmschmidt/wordVectors")' \
+    && pip install --upgrade tensorflow \
+    && pip install --upgrade keras scipy h5py pyyaml requests Pillow \
     && mv /root/spark/ /home/rstudio/.cache 
-
-
