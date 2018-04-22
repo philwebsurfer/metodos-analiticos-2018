@@ -1,0 +1,235 @@
+---
+title: 'Tarea 9: 23/04/2018'
+output:
+  html_document:
+    df_print: paged
+---
+
+_Jorge III Altamirano Astorga - 175904_
+
+# {.tabset}
+
+```{r include=FALSE}
+library(Matrix)
+library(tidyverse)
+library(tidytext)
+library(tsne)
+library(keras)
+```
+
+## Intro
+
+_Page Intentionally left blank_
+
+## Funciones en R
+
+```{r}
+archivos_d <- 
+  list.files(path = '../../../datos/id_lenguaje', 
+             full.names = TRUE) %>%
+  keep(function(x) str_detect(x, "sentences"))
+leer_oraciones <- function(archivo, n_max = -1, skip = 0){
+  oraciones <- read_lines(archivo, n_max = n_max, skip = skip)
+  oraciones %>% str_replace_all("^[0-9]*[\t]", "")
+}
+
+leer_oraciones(archivos_d[2], n_max = 3)
+```
+
+```{r}
+token_chr <- function(textos, n = 3L){
+  caracteres <- str_split(textos, pattern = '') %>%
+      map(function(x) { c(rep('_', n - 1), x) })
+  n_gramas <- tokenizers:::generate_ngrams_batch(caracteres, 
+              ngram_max = n, ngram_min = n, ngram_delim = '')
+  n_gramas
+}
+token_chr("Un día soleado.")
+```
+
+```{r}
+conteo_chr <- function(archivo, n = 4L, n_max = n_max, f_min = 3){
+  df <- data_frame(txt = leer_oraciones(archivo, n_max = n_max))
+  # escoger letras en vocabulario (más de f_min apariciones)
+  vocabulario <- df %>% unnest_tokens(input = txt, output = n_grama,
+                                      token = token_chr, n = 1) %>%
+                 group_by(n_grama) %>% tally() %>% arrange(n)
+  vocab_v <- filter(vocabulario, n > f_min) %>% pull(n_grama)
+  V <- length(vocab_v)
+  # sustituir todos los caracteres que no estén en vocab_v
+  pattern <- paste(vocab_v, collapse = '') %>%
+    str_replace_all("([\\[\\]\\(\\)\\{\\}\\´\\‘\\`\\’\\”\\“\\'\\^\\\\])", "\\$1") %>% #escapar agrupadores interpretados en las regexp
+    str_replace_all("-", "") %>% #quitar el guión, pues se interpreta como rangos
+    # str_replace_all('[\\"\\:\\;\\!\\/\\õ\\œ\\ù\\—\\¢\\š\\¤\\$\\›\\°\\ë\\…\\à\\ñ\\á\\ò\\@\\è\\<\\é\\í\\™\\€\\=\\–\\>\\¶\\•\\+\\û\\·\\q\\_\\§\\�]', "") %>%
+    str_replace_all('^', "[^") %>%
+    str_replace_all('$', "]")
+  # print(pattern)
+  conteo <- df %>%
+           mutate(txt = str_replace_all(txt, pattern = pattern, '*' )) 
+  conteo <- conteo %>% 
+           unnest_tokens(input = txt, output = n_grama, 
+                         token = token_chr, n = n) %>%
+           separate(n_grama, sep = n - 1, into = c('w_0', 'w_1')) %>%
+           group_by(w_0, w_1) %>%
+           summarise(num = length(w_1)) %>%
+           group_by(w_0) %>%
+           mutate(denom = sum(num)) %>%
+           arrange(desc(num)) %>%
+           mutate(log_p = log(num + 1) - log(denom + V)) # suavizamiento de Laplace
+  list(conteo = conteo, vocab = vocab_v, n = n)
+}
+log_p <- function(modelo){
+  n <- modelo$n
+  vocab <- modelo$vocab
+  V <- length(vocab)
+  pattern <- paste(vocab, collapse = '') %>%
+    str_replace_all("([\\[\\]\\(\\)\\{\\}\\´\\‘\\`\\’\\”\\“\\'\\^\\\\])", "\\$1") %>% #escapar agrupadores interpretados en las regexp
+    str_replace_all("-", "") %>% #quitar el guión, pues se interpreta como rangos
+    str_replace_all('^', "[^") %>%
+    str_replace_all('$', "]")
+  # print(pattern)
+  log_p_mod <- function(frases){
+     dat <- data_frame(txt = frases) %>%
+            mutate(txt = str_replace_all(txt, pattern = pattern, '*')) %>%
+            unnest_tokens(input = txt, output = n_grama, 
+                         token = token_chr, n = n) %>%
+            separate(n_grama, sep = n - 1, into = c('w_0', 'w_1')) %>%
+            left_join(modelo$conteo %>% select('w_0','denom'), by ='w_0') %>%
+            left_join(modelo$conteo %>% select('w_0','w_1','num'), by = c('w_0','w_1')) %>%
+            mutate(denom = ifelse(is.na(denom), V, denom + V)) %>%
+            mutate(num = ifelse(is.na(num), 1, num + 1)) %>%
+            mutate(log_p = log(num) - log(denom))
+     mean(dat$log_p)
+  }
+}
+```
+
+
+```{r}
+frances <- conteo_chr(archivos_d[2], n_max = 7000)
+ingles <- conteo_chr(archivos_d[1], n_max = 7000)
+italiano <- conteo_chr(archivos_d[3], n_max = 7000)
+portugues <- conteo_chr(archivos_d[4], n_max = 7000)
+espanol <- conteo_chr(archivos_d[5], n_max = 7000)
+turco <- conteo_chr(archivos_d[6], n_max = 7000)
+frances_log_p <- log_p(frances)
+ingles_log_p <- log_p(ingles)
+italiano_log_p <- log_p(italiano)
+portugues_log_p <- log_p(portugues)
+espanol_log_p <- log_p(espanol)
+turco_log_p <- log_p(turco)
+frances$conteo %>% head(100)
+turco$conteo %>% head(100)
+```
+
+```{r}
+probar_idiomas <- function(texto){
+  print(paste("Francés:", exp(frances_log_p(texto_ejemplo)))) 
+  print(paste("Español", exp(espanol_log_p(texto_ejemplo)))) 
+  print(paste("Inglés", exp(ingles_log_p(texto_ejemplo)))) 
+  print(paste("Turco", exp(turco_log_p(texto_ejemplo)))) 
+  print(paste("Italiano", exp(italiano_log_p(texto_ejemplo))))
+  print(paste("Portugués", exp(portugues_log_p(texto_ejemplo))))
+}
+```
+
+```{r}
+matriz_confusion <- function(texto){
+  df <- data.frame(row.names = c("frances", "espanol", "ingles", "turco", "italiano", "portugues"),
+    idiomas = c(
+        exp(frances_log_p(texto)),
+        exp(espanol_log_p(texto)), 
+        exp(ingles_log_p(texto)), 
+        exp(turco_log_p(texto)), 
+        exp(italiano_log_p(texto)),
+        exp(portugues_log_p(texto))
+      ),
+    frances   = c(1,0,0,0,0,0),
+    espanol   = c(0,1,0,0,0,0),
+    ingles    = c(0,0,1,0,0,0),
+    turco     = c(0,0,0,1,0,0),
+    italiano  = c(0,0,0,0,1,0),
+    portugues = c(0,0,0,0,0,1)
+    )
+    df <- df %>% mutate(frances = frances*idiomas,
+              espanol = espanol*idiomas,
+              ingles = ingles*idiomas,
+              turco = turco*idiomas,
+              italiano = italiano*idiomas,
+              portugues = portugues*idiomas)
+  df <- df %>% mutate(frances = (frances==max(idiomas)),
+              espanol = (espanol == max(idiomas)),
+              ingles = (ingles == max(idiomas)),
+              turco = (turco == max(idiomas)),
+              italiano = (italiano == max(idiomas)),
+              portugues = (portugues == max(idiomas)))
+  rownames(df) <- c("frances", "espanol", "ingles", "turco", "italiano", "portugues")
+  df
+}
+
+matriz_confusion("texto tonto en español")
+```
+
+```{r}
+matriz_confusion2 <- function(texto){
+  df <- matriz_confusion(texto)
+  df[which(sapply(df, function(x) any(x==TRUE)))]
+}
+matriz_confusion2("texto tonto en español")
+```
+
+## Ejercicios {.tabset}
+
+### Francés
+
+```{r}
+texto_ejemplo <- "C'est un bon exemple"
+probar_idiomas(texto_ejemplo)
+matriz_confusion(texto_ejemplo)
+matriz_confusion2(texto_ejemplo)
+```
+
+### Turco
+
+```{r}
+texto_ejemplo <- "İkinci yarıya çok hızlı giren Kayserispor, 54'te Umut Bulut'un kafa golüyle eşitliği yakaladı. Golden sonra tekrar vites yükselten Başakşehir'de sahneye Arda Turan çıktı. Ceza sahası çizgisi üzerinden sert bir şut çıkaran yıldız oyuncu, takımını rahatlatırken, 90. dakikada Elia maça son noktayı koydu."
+probar_idiomas(texto_ejemplo)
+matriz_confusion(texto_ejemplo)
+matriz_confusion2(texto_ejemplo)
+```
+
+### Inglés
+
+```{r}
+texto_ejemplo <- 'Neferirkare Kakai was an ancient Egyptian pharaoh, the third king of the Fifth Dynasty. The eldest son of the previous pharaoh, Sahure, he reigned for eight to eleven years, sometime in the early-to-mid 25th century BCE. His contemporaries viewed him as a kind and benevolent ruler, willing to intervene on behalf of his courtiers. During his rule the number of administration and priesthood officials increased, and they used their expanded wealth to build sophisticated mastabas (tombs) where they recorded their biographies for the first time. He was the last pharaoh to significantly modify the royal naming conventions, separating the throne name from the birth name, in front of which he added the "Son of Ra" epithet. In the royal necropolis of Abusir he started a pyramid for himself conceived as a step pyramid, a form not seen since the Third Dynasty about 120 years earlier.'
+probar_idiomas(texto_ejemplo)
+matriz_confusion(texto_ejemplo)
+matriz_confusion2(texto_ejemplo)
+```
+
+### Español
+
+```{r}
+texto_ejemplo <- "Morcín es un concejo de la comunidad autónoma española del Principado de Asturias, dividido en siete parroquias, formando un total de 65 núcleos de población, de los cuales 53 tienen una población inferior a los 100 habitantes, y únicamente las doce entidades restantes con una población de entre 100 y 1000 habitantes."
+probar_idiomas(texto_ejemplo)
+matriz_confusion(texto_ejemplo)
+matriz_confusion2(texto_ejemplo)
+```
+
+### Italiano
+
+```{r}
+texto_ejemplo <- "Nel pomeriggio del 21 settembre 1864, dopo che in mattinata scontri tra manifestanti e forze dell'ordine avevano avuto luogo in Piazza San Carlo a Torino, una folla di civili armati di bastoni tentò di avvicinarsi alla sede del ministero dell'interno in Piazza Castello, difesa da un contingente di allievi carabinieri: i carabinieri spararono sui manifestanti causando 15 vittime. La sera seguente, 22 settembre, nuovi tumulti ebbero luogo in Piazza San Carlo coinvolgendo altri allievi carabinieri che nella confusione spararono indiscriminatamente sulla folla, colpendo anche i membri di un battaglione di fanteria che stavano attraversando la piazza i quali aprirono a loro volta il fuoco: nel tiro incrociato rimasero uccise 47 persone tra militari e civili."
+probar_idiomas(texto_ejemplo)
+matriz_confusion(texto_ejemplo)
+matriz_confusion2(texto_ejemplo)
+```
+
+### Portugués
+
+```{r}
+texto_ejemplo <- 'Nos dois anos anteriores à invasão, a Alemanha e a União Soviética assinaram pactos políticos e econômicos com propósitos estratégicos. No entanto, o Alto Comando Alemão começou a planejar uma invasão da União Soviética em julho de 1940 (sob o nome de código "Operação Otto"), o que Adolf Hitler autorizou em 18 de dezembro de 1940. Ao longo da operação, cerca de 4 milhões de soldados do Eixo, a maior força de invasão da história das guerras, invadiu a União Soviética ocidental ao longo de uma frente de 2900 quilômetros de extensão. Além das tropas, a Wehrmacht empregou cerca de 600 mil veículos a motor e entre 600 000 e '
+probar_idiomas(texto_ejemplo)
+matriz_confusion(texto_ejemplo)
+matriz_confusion2(texto_ejemplo)
+```
