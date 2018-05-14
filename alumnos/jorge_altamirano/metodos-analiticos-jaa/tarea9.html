@@ -241,41 +241,45 @@ frances$conteo %&gt;% head(100)</code></pre>
   print(paste(&quot;Inglés&quot;, exp(ingles_log_p(texto_ejemplo)))) 
   print(paste(&quot;Turco&quot;, exp(turco_log_p(texto_ejemplo)))) 
   print(paste(&quot;Italiano&quot;, exp(italiano_log_p(texto_ejemplo))))
+  print(paste(&quot;Portugués&quot;, exp(portugues_log_p(texto_ejemplo))))
 }</code></pre>
 <pre class="r"><code>matriz_confusion &lt;- function(texto){
-  df &lt;- data.frame(row.names = c(&quot;frances&quot;, &quot;espanol&quot;, &quot;ingles&quot;, &quot;turco&quot;, &quot;italiano&quot;),
+  df &lt;- data.frame(row.names = c(&quot;frances&quot;, &quot;espanol&quot;, &quot;ingles&quot;, &quot;turco&quot;, &quot;italiano&quot;, &quot;portugues&quot;),
     idiomas = c(
         exp(frances_log_p(texto)),
         exp(espanol_log_p(texto)), 
         exp(ingles_log_p(texto)), 
         exp(turco_log_p(texto)), 
-        exp(italiano_log_p(texto))
+        exp(italiano_log_p(texto)),
+        exp(portugues_log_p(texto))
       ),
-    frances  = c(1,0,0,0,0),
-    espanol  = c(0,1,0,0,0),
-    ingles   = c(0,0,1,0,0),
-    turco    = c(0,0,0,1,0),
-    italiano = c(0,0,0,0,1)
+    frances   = c(1,0,0,0,0,0),
+    espanol   = c(0,1,0,0,0,0),
+    ingles    = c(0,0,1,0,0,0),
+    turco     = c(0,0,0,1,0,0),
+    italiano  = c(0,0,0,0,1,0),
+    portugues = c(0,0,0,0,0,1)
     )
     df &lt;- df %&gt;% mutate(frances = frances*idiomas,
               espanol = espanol*idiomas,
               ingles = ingles*idiomas,
               turco = turco*idiomas,
-              italiano = italiano*idiomas) #%&gt;%
-#   select(frances, espanol, ingles, turco, italiano)
+              italiano = italiano*idiomas,
+              portugues = portugues*idiomas)
   df &lt;- df %&gt;% mutate(frances = (frances==max(idiomas)),
               espanol = (espanol == max(idiomas)),
               ingles = (ingles == max(idiomas)),
               turco = (turco == max(idiomas)),
-              italiano = (italiano == max(idiomas)))
-  rownames(df) &lt;- c(&quot;frances&quot;, &quot;espanol&quot;, &quot;ingles&quot;, &quot;turco&quot;, &quot;italiano&quot;)
+              italiano = (italiano == max(idiomas)),
+              portugues = (portugues == max(idiomas)))
+  rownames(df) &lt;- c(&quot;frances&quot;, &quot;espanol&quot;, &quot;ingles&quot;, &quot;turco&quot;, &quot;italiano&quot;, &quot;portugues&quot;)
   df
 }
 
 matriz_confusion(&quot;texto tonto en español&quot;)</code></pre>
 <div data-pagedtable="false">
 <script data-pagedtable-source type="application/json">
-{"columns":[{"label":[""],"name":["_rn_"],"type":[""],"align":["left"]},{"label":["idiomas"],"name":[1],"type":["dbl"],"align":["right"]},{"label":["frances"],"name":[2],"type":["lgl"],"align":["right"]},{"label":["espanol"],"name":[3],"type":["lgl"],"align":["right"]},{"label":["ingles"],"name":[4],"type":["lgl"],"align":["right"]},{"label":["turco"],"name":[5],"type":["lgl"],"align":["right"]},{"label":["italiano"],"name":[6],"type":["lgl"],"align":["right"]}],"data":[{"1":"0.028273405","2":"FALSE","3":"FALSE","4":"FALSE","5":"FALSE","6":"FALSE","_rn_":"frances"},{"1":"0.079152547","2":"FALSE","3":"TRUE","4":"FALSE","5":"FALSE","6":"FALSE","_rn_":"espanol"},{"1":"0.021958748","2":"FALSE","3":"FALSE","4":"FALSE","5":"FALSE","6":"FALSE","_rn_":"ingles"},{"1":"0.009761585","2":"FALSE","3":"FALSE","4":"FALSE","5":"FALSE","6":"FALSE","_rn_":"turco"},{"1":"0.029662248","2":"FALSE","3":"FALSE","4":"FALSE","5":"FALSE","6":"FALSE","_rn_":"italiano"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
+{"columns":[{"label":[""],"name":["_rn_"],"type":[""],"align":["left"]},{"label":["idiomas"],"name":[1],"type":["dbl"],"align":["right"]},{"label":["frances"],"name":[2],"type":["lgl"],"align":["right"]},{"label":["espanol"],"name":[3],"type":["lgl"],"align":["right"]},{"label":["ingles"],"name":[4],"type":["lgl"],"align":["right"]},{"label":["turco"],"name":[5],"type":["lgl"],"align":["right"]},{"label":["italiano"],"name":[6],"type":["lgl"],"align":["right"]},{"label":["portugues"],"name":[7],"type":["lgl"],"align":["right"]}],"data":[{"1":"0.028273405","2":"FALSE","3":"FALSE","4":"FALSE","5":"FALSE","6":"FALSE","7":"FALSE","_rn_":"frances"},{"1":"0.079152547","2":"FALSE","3":"TRUE","4":"FALSE","5":"FALSE","6":"FALSE","7":"FALSE","_rn_":"espanol"},{"1":"0.021958748","2":"FALSE","3":"FALSE","4":"FALSE","5":"FALSE","6":"FALSE","7":"FALSE","_rn_":"ingles"},{"1":"0.009761585","2":"FALSE","3":"FALSE","4":"FALSE","5":"FALSE","6":"FALSE","7":"FALSE","_rn_":"turco"},{"1":"0.029662248","2":"FALSE","3":"FALSE","4":"FALSE","5":"FALSE","6":"FALSE","7":"FALSE","_rn_":"italiano"},{"1":"0.028148917","2":"FALSE","3":"FALSE","4":"FALSE","5":"FALSE","6":"FALSE","7":"FALSE","_rn_":"portugues"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
   </script>
 </div>
 <pre class="r"><code>matriz_confusion2 &lt;- function(texto){
@@ -285,10 +289,9 @@ matriz_confusion(&quot;texto tonto en español&quot;)</code></pre>
 matriz_confusion2(&quot;texto tonto en español&quot;)</code></pre>
 <div data-pagedtable="false">
 <script data-pagedtable-source type="application/json">
-{"columns":[{"label":[""],"name":["_rn_"],"type":[""],"align":["left"]},{"label":["espanol"],"name":[1],"type":["lgl"],"align":["right"]}],"data":[{"1":"FALSE","_rn_":"frances"},{"1":"TRUE","_rn_":"espanol"},{"1":"FALSE","_rn_":"ingles"},{"1":"FALSE","_rn_":"turco"},{"1":"FALSE","_rn_":"italiano"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
+{"columns":[{"label":[""],"name":["_rn_"],"type":[""],"align":["left"]},{"label":["espanol"],"name":[1],"type":["lgl"],"align":["right"]}],"data":[{"1":"FALSE","_rn_":"frances"},{"1":"TRUE","_rn_":"espanol"},{"1":"FALSE","_rn_":"ingles"},{"1":"FALSE","_rn_":"turco"},{"1":"FALSE","_rn_":"italiano"},{"1":"FALSE","_rn_":"portugues"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
   </script>
 </div>
-<p>```</p>
 </div>
 <div id="ejercicios" class="section level2 tabset">
 <h2>Ejercicios</h2>
@@ -300,17 +303,18 @@ probar_idiomas(texto_ejemplo)</code></pre>
 ## [1] &quot;Español 0.0231001715050051&quot;
 ## [1] &quot;Inglés 0.0248361253558725&quot;
 ## [1] &quot;Turco 0.0223971411595314&quot;
-## [1] &quot;Italiano 0.0426922684523597&quot;</code></pre>
+## [1] &quot;Italiano 0.0426922684523597&quot;
+## [1] &quot;Portugués 0.012453931613784&quot;</code></pre>
 <pre class="r"><code>matriz_confusion(texto_ejemplo)</code></pre>
 <div data-pagedtable="false">
 <script data-pagedtable-source type="application/json">
-{"columns":[{"label":[""],"name":["_rn_"],"type":[""],"align":["left"]},{"label":["idiomas"],"name":[1],"type":["dbl"],"align":["right"]},{"label":["frances"],"name":[2],"type":["lgl"],"align":["right"]},{"label":["espanol"],"name":[3],"type":["lgl"],"align":["right"]},{"label":["ingles"],"name":[4],"type":["lgl"],"align":["right"]},{"label":["turco"],"name":[5],"type":["lgl"],"align":["right"]},{"label":["italiano"],"name":[6],"type":["lgl"],"align":["right"]}],"data":[{"1":"0.14173050","2":"TRUE","3":"FALSE","4":"FALSE","5":"FALSE","6":"FALSE","_rn_":"frances"},{"1":"0.02310017","2":"FALSE","3":"FALSE","4":"FALSE","5":"FALSE","6":"FALSE","_rn_":"espanol"},{"1":"0.02483613","2":"FALSE","3":"FALSE","4":"FALSE","5":"FALSE","6":"FALSE","_rn_":"ingles"},{"1":"0.02239714","2":"FALSE","3":"FALSE","4":"FALSE","5":"FALSE","6":"FALSE","_rn_":"turco"},{"1":"0.04269227","2":"FALSE","3":"FALSE","4":"FALSE","5":"FALSE","6":"FALSE","_rn_":"italiano"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
+{"columns":[{"label":[""],"name":["_rn_"],"type":[""],"align":["left"]},{"label":["idiomas"],"name":[1],"type":["dbl"],"align":["right"]},{"label":["frances"],"name":[2],"type":["lgl"],"align":["right"]},{"label":["espanol"],"name":[3],"type":["lgl"],"align":["right"]},{"label":["ingles"],"name":[4],"type":["lgl"],"align":["right"]},{"label":["turco"],"name":[5],"type":["lgl"],"align":["right"]},{"label":["italiano"],"name":[6],"type":["lgl"],"align":["right"]},{"label":["portugues"],"name":[7],"type":["lgl"],"align":["right"]}],"data":[{"1":"0.14173050","2":"TRUE","3":"FALSE","4":"FALSE","5":"FALSE","6":"FALSE","7":"FALSE","_rn_":"frances"},{"1":"0.02310017","2":"FALSE","3":"FALSE","4":"FALSE","5":"FALSE","6":"FALSE","7":"FALSE","_rn_":"espanol"},{"1":"0.02483613","2":"FALSE","3":"FALSE","4":"FALSE","5":"FALSE","6":"FALSE","7":"FALSE","_rn_":"ingles"},{"1":"0.02239714","2":"FALSE","3":"FALSE","4":"FALSE","5":"FALSE","6":"FALSE","7":"FALSE","_rn_":"turco"},{"1":"0.04269227","2":"FALSE","3":"FALSE","4":"FALSE","5":"FALSE","6":"FALSE","7":"FALSE","_rn_":"italiano"},{"1":"0.01245393","2":"FALSE","3":"FALSE","4":"FALSE","5":"FALSE","6":"FALSE","7":"FALSE","_rn_":"portugues"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
   </script>
 </div>
 <pre class="r"><code>matriz_confusion2(texto_ejemplo)</code></pre>
 <div data-pagedtable="false">
 <script data-pagedtable-source type="application/json">
-{"columns":[{"label":[""],"name":["_rn_"],"type":[""],"align":["left"]},{"label":["frances"],"name":[1],"type":["lgl"],"align":["right"]}],"data":[{"1":"TRUE","_rn_":"frances"},{"1":"FALSE","_rn_":"espanol"},{"1":"FALSE","_rn_":"ingles"},{"1":"FALSE","_rn_":"turco"},{"1":"FALSE","_rn_":"italiano"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
+{"columns":[{"label":[""],"name":["_rn_"],"type":[""],"align":["left"]},{"label":["frances"],"name":[1],"type":["lgl"],"align":["right"]}],"data":[{"1":"TRUE","_rn_":"frances"},{"1":"FALSE","_rn_":"espanol"},{"1":"FALSE","_rn_":"ingles"},{"1":"FALSE","_rn_":"turco"},{"1":"FALSE","_rn_":"italiano"},{"1":"FALSE","_rn_":"portugues"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
   </script>
 </div>
 </div>
@@ -322,17 +326,18 @@ probar_idiomas(texto_ejemplo)</code></pre>
 ## [1] &quot;Español 0.0248096762734543&quot;
 ## [1] &quot;Inglés 0.0258820034194913&quot;
 ## [1] &quot;Turco 0.0665704012561315&quot;
-## [1] &quot;Italiano 0.0225051226512016&quot;</code></pre>
+## [1] &quot;Italiano 0.0225051226512016&quot;
+## [1] &quot;Portugués 0.0216655434883141&quot;</code></pre>
 <pre class="r"><code>matriz_confusion(texto_ejemplo)</code></pre>
 <div data-pagedtable="false">
 <script data-pagedtable-source type="application/json">
-{"columns":[{"label":[""],"name":["_rn_"],"type":[""],"align":["left"]},{"label":["idiomas"],"name":[1],"type":["dbl"],"align":["right"]},{"label":["frances"],"name":[2],"type":["lgl"],"align":["right"]},{"label":["espanol"],"name":[3],"type":["lgl"],"align":["right"]},{"label":["ingles"],"name":[4],"type":["lgl"],"align":["right"]},{"label":["turco"],"name":[5],"type":["lgl"],"align":["right"]},{"label":["italiano"],"name":[6],"type":["lgl"],"align":["right"]}],"data":[{"1":"0.01786377","2":"FALSE","3":"FALSE","4":"FALSE","5":"FALSE","6":"FALSE","_rn_":"frances"},{"1":"0.02480968","2":"FALSE","3":"FALSE","4":"FALSE","5":"FALSE","6":"FALSE","_rn_":"espanol"},{"1":"0.02588200","2":"FALSE","3":"FALSE","4":"FALSE","5":"FALSE","6":"FALSE","_rn_":"ingles"},{"1":"0.06657040","2":"FALSE","3":"FALSE","4":"FALSE","5":"TRUE","6":"FALSE","_rn_":"turco"},{"1":"0.02250512","2":"FALSE","3":"FALSE","4":"FALSE","5":"FALSE","6":"FALSE","_rn_":"italiano"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
+{"columns":[{"label":[""],"name":["_rn_"],"type":[""],"align":["left"]},{"label":["idiomas"],"name":[1],"type":["dbl"],"align":["right"]},{"label":["frances"],"name":[2],"type":["lgl"],"align":["right"]},{"label":["espanol"],"name":[3],"type":["lgl"],"align":["right"]},{"label":["ingles"],"name":[4],"type":["lgl"],"align":["right"]},{"label":["turco"],"name":[5],"type":["lgl"],"align":["right"]},{"label":["italiano"],"name":[6],"type":["lgl"],"align":["right"]},{"label":["portugues"],"name":[7],"type":["lgl"],"align":["right"]}],"data":[{"1":"0.01786377","2":"FALSE","3":"FALSE","4":"FALSE","5":"FALSE","6":"FALSE","7":"FALSE","_rn_":"frances"},{"1":"0.02480968","2":"FALSE","3":"FALSE","4":"FALSE","5":"FALSE","6":"FALSE","7":"FALSE","_rn_":"espanol"},{"1":"0.02588200","2":"FALSE","3":"FALSE","4":"FALSE","5":"FALSE","6":"FALSE","7":"FALSE","_rn_":"ingles"},{"1":"0.06657040","2":"FALSE","3":"FALSE","4":"FALSE","5":"TRUE","6":"FALSE","7":"FALSE","_rn_":"turco"},{"1":"0.02250512","2":"FALSE","3":"FALSE","4":"FALSE","5":"FALSE","6":"FALSE","7":"FALSE","_rn_":"italiano"},{"1":"0.02166554","2":"FALSE","3":"FALSE","4":"FALSE","5":"FALSE","6":"FALSE","7":"FALSE","_rn_":"portugues"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
   </script>
 </div>
 <pre class="r"><code>matriz_confusion2(texto_ejemplo)</code></pre>
 <div data-pagedtable="false">
 <script data-pagedtable-source type="application/json">
-{"columns":[{"label":[""],"name":["_rn_"],"type":[""],"align":["left"]},{"label":["turco"],"name":[1],"type":["lgl"],"align":["right"]}],"data":[{"1":"FALSE","_rn_":"frances"},{"1":"FALSE","_rn_":"espanol"},{"1":"FALSE","_rn_":"ingles"},{"1":"TRUE","_rn_":"turco"},{"1":"FALSE","_rn_":"italiano"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
+{"columns":[{"label":[""],"name":["_rn_"],"type":[""],"align":["left"]},{"label":["turco"],"name":[1],"type":["lgl"],"align":["right"]}],"data":[{"1":"FALSE","_rn_":"frances"},{"1":"FALSE","_rn_":"espanol"},{"1":"FALSE","_rn_":"ingles"},{"1":"TRUE","_rn_":"turco"},{"1":"FALSE","_rn_":"italiano"},{"1":"FALSE","_rn_":"portugues"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
   </script>
 </div>
 </div>
@@ -344,17 +349,18 @@ probar_idiomas(texto_ejemplo)</code></pre>
 ## [1] &quot;Español 0.028514565968769&quot;
 ## [1] &quot;Inglés 0.0933029490237721&quot;
 ## [1] &quot;Turco 0.0202118382023018&quot;
-## [1] &quot;Italiano 0.0314110720369455&quot;</code></pre>
+## [1] &quot;Italiano 0.0314110720369455&quot;
+## [1] &quot;Portugués 0.0252783379354456&quot;</code></pre>
 <pre class="r"><code>matriz_confusion(texto_ejemplo)</code></pre>
 <div data-pagedtable="false">
 <script data-pagedtable-source type="application/json">
-{"columns":[{"label":[""],"name":["_rn_"],"type":[""],"align":["left"]},{"label":["idiomas"],"name":[1],"type":["dbl"],"align":["right"]},{"label":["frances"],"name":[2],"type":["lgl"],"align":["right"]},{"label":["espanol"],"name":[3],"type":["lgl"],"align":["right"]},{"label":["ingles"],"name":[4],"type":["lgl"],"align":["right"]},{"label":["turco"],"name":[5],"type":["lgl"],"align":["right"]},{"label":["italiano"],"name":[6],"type":["lgl"],"align":["right"]}],"data":[{"1":"0.03200121","2":"FALSE","3":"FALSE","4":"FALSE","5":"FALSE","6":"FALSE","_rn_":"frances"},{"1":"0.02851457","2":"FALSE","3":"FALSE","4":"FALSE","5":"FALSE","6":"FALSE","_rn_":"espanol"},{"1":"0.09330295","2":"FALSE","3":"FALSE","4":"TRUE","5":"FALSE","6":"FALSE","_rn_":"ingles"},{"1":"0.02021184","2":"FALSE","3":"FALSE","4":"FALSE","5":"FALSE","6":"FALSE","_rn_":"turco"},{"1":"0.03141107","2":"FALSE","3":"FALSE","4":"FALSE","5":"FALSE","6":"FALSE","_rn_":"italiano"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
+{"columns":[{"label":[""],"name":["_rn_"],"type":[""],"align":["left"]},{"label":["idiomas"],"name":[1],"type":["dbl"],"align":["right"]},{"label":["frances"],"name":[2],"type":["lgl"],"align":["right"]},{"label":["espanol"],"name":[3],"type":["lgl"],"align":["right"]},{"label":["ingles"],"name":[4],"type":["lgl"],"align":["right"]},{"label":["turco"],"name":[5],"type":["lgl"],"align":["right"]},{"label":["italiano"],"name":[6],"type":["lgl"],"align":["right"]},{"label":["portugues"],"name":[7],"type":["lgl"],"align":["right"]}],"data":[{"1":"0.03200121","2":"FALSE","3":"FALSE","4":"FALSE","5":"FALSE","6":"FALSE","7":"FALSE","_rn_":"frances"},{"1":"0.02851457","2":"FALSE","3":"FALSE","4":"FALSE","5":"FALSE","6":"FALSE","7":"FALSE","_rn_":"espanol"},{"1":"0.09330295","2":"FALSE","3":"FALSE","4":"TRUE","5":"FALSE","6":"FALSE","7":"FALSE","_rn_":"ingles"},{"1":"0.02021184","2":"FALSE","3":"FALSE","4":"FALSE","5":"FALSE","6":"FALSE","7":"FALSE","_rn_":"turco"},{"1":"0.03141107","2":"FALSE","3":"FALSE","4":"FALSE","5":"FALSE","6":"FALSE","7":"FALSE","_rn_":"italiano"},{"1":"0.02527834","2":"FALSE","3":"FALSE","4":"FALSE","5":"FALSE","6":"FALSE","7":"FALSE","_rn_":"portugues"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
   </script>
 </div>
 <pre class="r"><code>matriz_confusion2(texto_ejemplo)</code></pre>
 <div data-pagedtable="false">
 <script data-pagedtable-source type="application/json">
-{"columns":[{"label":[""],"name":["_rn_"],"type":[""],"align":["left"]},{"label":["ingles"],"name":[1],"type":["lgl"],"align":["right"]}],"data":[{"1":"FALSE","_rn_":"frances"},{"1":"FALSE","_rn_":"espanol"},{"1":"TRUE","_rn_":"ingles"},{"1":"FALSE","_rn_":"turco"},{"1":"FALSE","_rn_":"italiano"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
+{"columns":[{"label":[""],"name":["_rn_"],"type":[""],"align":["left"]},{"label":["ingles"],"name":[1],"type":["lgl"],"align":["right"]}],"data":[{"1":"FALSE","_rn_":"frances"},{"1":"FALSE","_rn_":"espanol"},{"1":"TRUE","_rn_":"ingles"},{"1":"FALSE","_rn_":"turco"},{"1":"FALSE","_rn_":"italiano"},{"1":"FALSE","_rn_":"portugues"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
   </script>
 </div>
 </div>
@@ -366,17 +372,18 @@ probar_idiomas(texto_ejemplo)</code></pre>
 ## [1] &quot;Español 0.122334139493499&quot;
 ## [1] &quot;Inglés 0.0331568990547685&quot;
 ## [1] &quot;Turco 0.023407362106058&quot;
-## [1] &quot;Italiano 0.049021599400031&quot;</code></pre>
+## [1] &quot;Italiano 0.049021599400031&quot;
+## [1] &quot;Portugués 0.066331238581977&quot;</code></pre>
 <pre class="r"><code>matriz_confusion(texto_ejemplo)</code></pre>
 <div data-pagedtable="false">
 <script data-pagedtable-source type="application/json">
-{"columns":[{"label":[""],"name":["_rn_"],"type":[""],"align":["left"]},{"label":["idiomas"],"name":[1],"type":["dbl"],"align":["right"]},{"label":["frances"],"name":[2],"type":["lgl"],"align":["right"]},{"label":["espanol"],"name":[3],"type":["lgl"],"align":["right"]},{"label":["ingles"],"name":[4],"type":["lgl"],"align":["right"]},{"label":["turco"],"name":[5],"type":["lgl"],"align":["right"]},{"label":["italiano"],"name":[6],"type":["lgl"],"align":["right"]}],"data":[{"1":"0.04751702","2":"FALSE","3":"FALSE","4":"FALSE","5":"FALSE","6":"FALSE","_rn_":"frances"},{"1":"0.12233414","2":"FALSE","3":"TRUE","4":"FALSE","5":"FALSE","6":"FALSE","_rn_":"espanol"},{"1":"0.03315690","2":"FALSE","3":"FALSE","4":"FALSE","5":"FALSE","6":"FALSE","_rn_":"ingles"},{"1":"0.02340736","2":"FALSE","3":"FALSE","4":"FALSE","5":"FALSE","6":"FALSE","_rn_":"turco"},{"1":"0.04902160","2":"FALSE","3":"FALSE","4":"FALSE","5":"FALSE","6":"FALSE","_rn_":"italiano"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
+{"columns":[{"label":[""],"name":["_rn_"],"type":[""],"align":["left"]},{"label":["idiomas"],"name":[1],"type":["dbl"],"align":["right"]},{"label":["frances"],"name":[2],"type":["lgl"],"align":["right"]},{"label":["espanol"],"name":[3],"type":["lgl"],"align":["right"]},{"label":["ingles"],"name":[4],"type":["lgl"],"align":["right"]},{"label":["turco"],"name":[5],"type":["lgl"],"align":["right"]},{"label":["italiano"],"name":[6],"type":["lgl"],"align":["right"]},{"label":["portugues"],"name":[7],"type":["lgl"],"align":["right"]}],"data":[{"1":"0.04751702","2":"FALSE","3":"FALSE","4":"FALSE","5":"FALSE","6":"FALSE","7":"FALSE","_rn_":"frances"},{"1":"0.12233414","2":"FALSE","3":"TRUE","4":"FALSE","5":"FALSE","6":"FALSE","7":"FALSE","_rn_":"espanol"},{"1":"0.03315690","2":"FALSE","3":"FALSE","4":"FALSE","5":"FALSE","6":"FALSE","7":"FALSE","_rn_":"ingles"},{"1":"0.02340736","2":"FALSE","3":"FALSE","4":"FALSE","5":"FALSE","6":"FALSE","7":"FALSE","_rn_":"turco"},{"1":"0.04902160","2":"FALSE","3":"FALSE","4":"FALSE","5":"FALSE","6":"FALSE","7":"FALSE","_rn_":"italiano"},{"1":"0.06633124","2":"FALSE","3":"FALSE","4":"FALSE","5":"FALSE","6":"FALSE","7":"FALSE","_rn_":"portugues"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
   </script>
 </div>
 <pre class="r"><code>matriz_confusion2(texto_ejemplo)</code></pre>
 <div data-pagedtable="false">
 <script data-pagedtable-source type="application/json">
-{"columns":[{"label":[""],"name":["_rn_"],"type":[""],"align":["left"]},{"label":["espanol"],"name":[1],"type":["lgl"],"align":["right"]}],"data":[{"1":"FALSE","_rn_":"frances"},{"1":"TRUE","_rn_":"espanol"},{"1":"FALSE","_rn_":"ingles"},{"1":"FALSE","_rn_":"turco"},{"1":"FALSE","_rn_":"italiano"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
+{"columns":[{"label":[""],"name":["_rn_"],"type":[""],"align":["left"]},{"label":["espanol"],"name":[1],"type":["lgl"],"align":["right"]}],"data":[{"1":"FALSE","_rn_":"frances"},{"1":"TRUE","_rn_":"espanol"},{"1":"FALSE","_rn_":"ingles"},{"1":"FALSE","_rn_":"turco"},{"1":"FALSE","_rn_":"italiano"},{"1":"FALSE","_rn_":"portugues"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
   </script>
 </div>
 </div>
@@ -388,17 +395,41 @@ probar_idiomas(texto_ejemplo)</code></pre>
 ## [1] &quot;Español 0.0518040012751532&quot;
 ## [1] &quot;Inglés 0.0389923205295831&quot;
 ## [1] &quot;Turco 0.0249223532147746&quot;
-## [1] &quot;Italiano 0.123939189630144&quot;</code></pre>
+## [1] &quot;Italiano 0.123939189630144&quot;
+## [1] &quot;Portugués 0.04205673707043&quot;</code></pre>
 <pre class="r"><code>matriz_confusion(texto_ejemplo)</code></pre>
 <div data-pagedtable="false">
 <script data-pagedtable-source type="application/json">
-{"columns":[{"label":[""],"name":["_rn_"],"type":[""],"align":["left"]},{"label":["idiomas"],"name":[1],"type":["dbl"],"align":["right"]},{"label":["frances"],"name":[2],"type":["lgl"],"align":["right"]},{"label":["espanol"],"name":[3],"type":["lgl"],"align":["right"]},{"label":["ingles"],"name":[4],"type":["lgl"],"align":["right"]},{"label":["turco"],"name":[5],"type":["lgl"],"align":["right"]},{"label":["italiano"],"name":[6],"type":["lgl"],"align":["right"]}],"data":[{"1":"0.03842909","2":"FALSE","3":"FALSE","4":"FALSE","5":"FALSE","6":"FALSE","_rn_":"frances"},{"1":"0.05180400","2":"FALSE","3":"FALSE","4":"FALSE","5":"FALSE","6":"FALSE","_rn_":"espanol"},{"1":"0.03899232","2":"FALSE","3":"FALSE","4":"FALSE","5":"FALSE","6":"FALSE","_rn_":"ingles"},{"1":"0.02492235","2":"FALSE","3":"FALSE","4":"FALSE","5":"FALSE","6":"FALSE","_rn_":"turco"},{"1":"0.12393919","2":"FALSE","3":"FALSE","4":"FALSE","5":"FALSE","6":"TRUE","_rn_":"italiano"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
+{"columns":[{"label":[""],"name":["_rn_"],"type":[""],"align":["left"]},{"label":["idiomas"],"name":[1],"type":["dbl"],"align":["right"]},{"label":["frances"],"name":[2],"type":["lgl"],"align":["right"]},{"label":["espanol"],"name":[3],"type":["lgl"],"align":["right"]},{"label":["ingles"],"name":[4],"type":["lgl"],"align":["right"]},{"label":["turco"],"name":[5],"type":["lgl"],"align":["right"]},{"label":["italiano"],"name":[6],"type":["lgl"],"align":["right"]},{"label":["portugues"],"name":[7],"type":["lgl"],"align":["right"]}],"data":[{"1":"0.03842909","2":"FALSE","3":"FALSE","4":"FALSE","5":"FALSE","6":"FALSE","7":"FALSE","_rn_":"frances"},{"1":"0.05180400","2":"FALSE","3":"FALSE","4":"FALSE","5":"FALSE","6":"FALSE","7":"FALSE","_rn_":"espanol"},{"1":"0.03899232","2":"FALSE","3":"FALSE","4":"FALSE","5":"FALSE","6":"FALSE","7":"FALSE","_rn_":"ingles"},{"1":"0.02492235","2":"FALSE","3":"FALSE","4":"FALSE","5":"FALSE","6":"FALSE","7":"FALSE","_rn_":"turco"},{"1":"0.12393919","2":"FALSE","3":"FALSE","4":"FALSE","5":"FALSE","6":"TRUE","7":"FALSE","_rn_":"italiano"},{"1":"0.04205674","2":"FALSE","3":"FALSE","4":"FALSE","5":"FALSE","6":"FALSE","7":"FALSE","_rn_":"portugues"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
   </script>
 </div>
 <pre class="r"><code>matriz_confusion2(texto_ejemplo)</code></pre>
 <div data-pagedtable="false">
 <script data-pagedtable-source type="application/json">
-{"columns":[{"label":[""],"name":["_rn_"],"type":[""],"align":["left"]},{"label":["italiano"],"name":[1],"type":["lgl"],"align":["right"]}],"data":[{"1":"FALSE","_rn_":"frances"},{"1":"FALSE","_rn_":"espanol"},{"1":"FALSE","_rn_":"ingles"},{"1":"FALSE","_rn_":"turco"},{"1":"TRUE","_rn_":"italiano"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
+{"columns":[{"label":[""],"name":["_rn_"],"type":[""],"align":["left"]},{"label":["italiano"],"name":[1],"type":["lgl"],"align":["right"]}],"data":[{"1":"FALSE","_rn_":"frances"},{"1":"FALSE","_rn_":"espanol"},{"1":"FALSE","_rn_":"ingles"},{"1":"FALSE","_rn_":"turco"},{"1":"TRUE","_rn_":"italiano"},{"1":"FALSE","_rn_":"portugues"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
+  </script>
+</div>
+</div>
+<div id="portugues" class="section level3">
+<h3>Portugués</h3>
+<pre class="r"><code>texto_ejemplo &lt;- 'Nos dois anos anteriores à invasão, a Alemanha e a União Soviética assinaram pactos políticos e econômicos com propósitos estratégicos. No entanto, o Alto Comando Alemão começou a planejar uma invasão da União Soviética em julho de 1940 (sob o nome de código &quot;Operação Otto&quot;), o que Adolf Hitler autorizou em 18 de dezembro de 1940. Ao longo da operação, cerca de 4 milhões de soldados do Eixo, a maior força de invasão da história das guerras, invadiu a União Soviética ocidental ao longo de uma frente de 2900 quilômetros de extensão. Além das tropas, a Wehrmacht empregou cerca de 600 mil veículos a motor e entre 600 000 e '
+probar_idiomas(texto_ejemplo)</code></pre>
+<pre><code>## [1] &quot;Francés: 0.0333867005685492&quot;
+## [1] &quot;Español 0.0613706976072588&quot;
+## [1] &quot;Inglés 0.0324596596124713&quot;
+## [1] &quot;Turco 0.0217864953031643&quot;
+## [1] &quot;Italiano 0.0372393155423583&quot;
+## [1] &quot;Portugués 0.0931478850685002&quot;</code></pre>
+<pre class="r"><code>matriz_confusion(texto_ejemplo)</code></pre>
+<div data-pagedtable="false">
+<script data-pagedtable-source type="application/json">
+{"columns":[{"label":[""],"name":["_rn_"],"type":[""],"align":["left"]},{"label":["idiomas"],"name":[1],"type":["dbl"],"align":["right"]},{"label":["frances"],"name":[2],"type":["lgl"],"align":["right"]},{"label":["espanol"],"name":[3],"type":["lgl"],"align":["right"]},{"label":["ingles"],"name":[4],"type":["lgl"],"align":["right"]},{"label":["turco"],"name":[5],"type":["lgl"],"align":["right"]},{"label":["italiano"],"name":[6],"type":["lgl"],"align":["right"]},{"label":["portugues"],"name":[7],"type":["lgl"],"align":["right"]}],"data":[{"1":"0.03338670","2":"FALSE","3":"FALSE","4":"FALSE","5":"FALSE","6":"FALSE","7":"FALSE","_rn_":"frances"},{"1":"0.06137070","2":"FALSE","3":"FALSE","4":"FALSE","5":"FALSE","6":"FALSE","7":"FALSE","_rn_":"espanol"},{"1":"0.03245966","2":"FALSE","3":"FALSE","4":"FALSE","5":"FALSE","6":"FALSE","7":"FALSE","_rn_":"ingles"},{"1":"0.02178650","2":"FALSE","3":"FALSE","4":"FALSE","5":"FALSE","6":"FALSE","7":"FALSE","_rn_":"turco"},{"1":"0.03723932","2":"FALSE","3":"FALSE","4":"FALSE","5":"FALSE","6":"FALSE","7":"FALSE","_rn_":"italiano"},{"1":"0.09314789","2":"FALSE","3":"FALSE","4":"FALSE","5":"FALSE","6":"FALSE","7":"TRUE","_rn_":"portugues"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
+  </script>
+</div>
+<pre class="r"><code>matriz_confusion2(texto_ejemplo)</code></pre>
+<div data-pagedtable="false">
+<script data-pagedtable-source type="application/json">
+{"columns":[{"label":[""],"name":["_rn_"],"type":[""],"align":["left"]},{"label":["portugues"],"name":[1],"type":["lgl"],"align":["right"]}],"data":[{"1":"FALSE","_rn_":"frances"},{"1":"FALSE","_rn_":"espanol"},{"1":"FALSE","_rn_":"ingles"},{"1":"FALSE","_rn_":"turco"},{"1":"FALSE","_rn_":"italiano"},{"1":"TRUE","_rn_":"portugues"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
   </script>
 </div>
 </div>

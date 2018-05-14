@@ -1,8 +1,12 @@
 #!/bin/sh
-echo Downloading english...
-wget -c 'https://dumps.wikimedia.org/enwiki/latest/enwiki-latest-all-titles-in-ns0.gz'
-echo Transforming english...
-zcat enwiki-latest-all-titles-in-ns0.gz | \
- sed 's!_\+! !g;s![^a-z ]!!ig;s!^\s\+!!;s!\s\+$!!;/^\s*$/d' | \
- tr '[:upper:]' '[:lower:]' | tr ' ' '\n' | sort -u > enwiki-latest-all-titles-in-ns0-transform
-
+#english español Deutsch portugués francais tagalog italiano vietnamese
+for lang in en es de pt fr lt it vi; 
+do
+	echo "Downloading $lang"
+	wget -c "https://dumps.wikimedia.org/${lang}wiki/latest/${lang}wiki-latest-all-titles-in-ns0.gz"
+	echo -n Transforming $lang...
+	zcat ${lang}wiki-latest-all-titles-in-ns0.gz | \
+		 sed 's!_\+! !g;s![^a-z ]!!ig;s!^\s\+!!;s!\s\+$!!;/^\s*$/d' | \
+		 tr '[:upper:]' '[:lower:]' | tr ' ' '\n' | sort -u > "${lang}wiki-latest-all-titles-in-ns0-transform"
+	echo " done!"
+done
