@@ -1,5 +1,6 @@
 #!/bin/sh
 #english español Deutsch portugués francais tagalog italiano vietnamese
+source ~/.bash_profile
 for lang in en es de pt fr lt it vi; 
 do
 	echo "Downloading $lang"
@@ -10,3 +11,5 @@ do
 		 tr '[:upper:]' '[:lower:]' | tr ' ' '\n' | sort -u > "${lang}wiki-latest-all-titles-in-ns0-transform"
 	echo " done!"
 done
+cat *-transform > wiki-titles.txt
+hdfs dfs -copyFromLocal wiki-titles.txt hdfs://jupyter.corp.penoles.mx:9000/ma2018-examen2/
