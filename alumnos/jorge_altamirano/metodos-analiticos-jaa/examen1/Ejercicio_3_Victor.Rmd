@@ -1,0 +1,213 @@
+---
+title: "Untitled"
+author: "Victor Quintero Marmol Gonzalez"
+date: "15 de marzo de 2018"
+output: html_document
+---
+
+```{r}
+library(tidyverse)
+```
+
+
+```{r}
+hash_gen <- function(seed){
+  function(x){
+    hash_32 <- digest::digest(x, 'xxhash32', serialize = FALSE, seed = seed) 
+    # Covertimos a bits, tomando de dos en dos:
+    sapply(seq(1, nchar(hash_32), 2), function(x) substr(hash_32, x, x+1)) %>%
+    strtoi(16L) %>%  # a enteros
+    as.raw %>%    #bytes      
+    rawToBits()
+    #dig_md5[permutacion]
+  }
+}
+set.seed(5451)
+hash_1 <- hash_gen(seed = 123)
+hash_2 <- hash_gen(seed = 564)
+hash_1("7yya40787")
+```
+
+```{r}
+tail_length <- function(bits){
+  bits %>% which.max - 1  %>% as.integer
+}
+hash_1("7yya40787") %>% tail_length
+```
+
+
+
+
+#######################
+
+
+```{r}
+movies<- read.csv("movielens/tags.csv", header = F)
+names(movies)<- c("userId","movieId","rating","timestamp")
+
+user_id <- movies %>% select(userId) 
+user_id <- tibble::rowid_to_column(user_id, "num_distintos")
+
+user_id$userId<- as.character(user_id$userId)
+user_id
+```
+
+
+
+
+```{r}
+m_bits <- 5
+m <- 2^m_bits
+tail_length_lead <- function(bits){
+  bits[-c(1:m_bits)] %>% which.max %>% as.integer
+}
+hash_1("7yya40787")
+```
+
+```{r}
+hash_1("7yya40787") %>% tail_length_lead
+```
+
+```{r}
+cubeta <- function(bits){
+  paste(as.character(bits[1:m_bits]), collapse='')
+}
+hash_1("7yya40787") %>% cubeta
+```
+
+```{r}
+n <- 100000
+df <- user_id %>%
+      mutate(hash = map(userId, hash_1)) %>%
+      mutate(cubeta = map_chr(hash, cubeta))
+df
+```
+
+```{r}
+df <- df %>% 
+      mutate(tail_1 = map_int(hash, tail_length_lead))
+df     
+```
+
+
+
+```{r}
+armonica <- function(x){
+  1/mean(1/x)
+  }
+res <- df %>% spread(cubeta, tail_1, fill= 0) %>%
+        gather(cubeta, tail_1, -num_distintos, -userId, -hash) %>%
+        select(num_distintos, cubeta, tail_1) 
+res
+```
+
+
+```{r}
+tail(res)
+```
+
+
+```{r}
+res_2 <- res %>% 
+      group_by(cubeta) %>%
+      arrange(num_distintos) %>%
+      mutate(tail_max = cummax(tail_1)) %>%
+      group_by(num_distintos) %>%
+      summarise(media = 0.72*(m*armonica(2^tail_max)))
+ggplot(res_2 %>% filter(num_distintos > 1000), aes(x = num_distintos, y = media)) + geom_line() +
+  geom_abline(slope = 1, colour ='red') 
+```
+
+2.
+
+```{r}
+quantile(1-res_2$media/res_2$num_distintos, probs=c(0.1, 0.5, .9))
+```
+
+
+#######################
+
+
+```{r}
+movies2<- read.csv("movielens/ratings.csv", header = F)
+names(movies2)<- c("userId","movieId","rating","timestamp")
+
+user_id2<- movies2 %>% select(userId) 
+user_id2 <- tibble::rowid_to_column(user_id2, "num_distintos")
+
+user_id2$userId<- as.character(user_id2$userId)
+user_id2
+```
+
+
+
+
+```{r}
+m_bits <- 5
+m <- 2^m_bits
+tail_length_lead <- function(bits){
+  bits[-c(1:m_bits)] %>% which.max %>% as.integer
+}
+hash_1("7yya40787")
+```
+
+```{r}
+hash_1("7yya40787") %>% tail_length_lead
+```
+
+```{r}
+cubeta <- function(bits){
+  paste(as.character(bits[1:m_bits]), collapse='')
+}
+hash_1("7yya40787") %>% cubeta
+```
+
+```{r}
+
+df2 <-  user_id2 %>%
+      mutate(hash = map(userId, hash_1)) %>%
+      mutate(cubeta = map_chr(hash, cubeta))
+df2
+
+```
+
+```{r}
+df2 <- df2 %>% 
+      mutate(tail_1 = map_int(hash, tail_length_lead))
+df2     
+```
+
+
+
+```{r}
+armonica <- function(x){
+  1/mean(1/x)
+  }
+res <- df2 %>% spread(cubeta, tail_1, fill= 0) %>%
+        gather(cubeta, tail_1, -num_distintos, -userId, -hash) %>%
+        select(num_distintos, cubeta, tail_1) 
+res
+```
+
+
+```{r}
+tail(res)
+```
+
+
+```{r}
+res_2 <- res %>% 
+      group_by(cubeta) %>%
+      arrange(num_distintos) %>%
+      mutate(tail_max = cummax(tail_1)) %>%
+      group_by(num_distintos) %>%
+      summarise(media = 0.72*(m*armonica(2^tail_max)))
+ggplot(res_2 %>% filter(num_distintos > 1000), aes(x = num_distintos, y = media)) + geom_line() +
+  geom_abline(slope = 1, colour ='red') 
+```
+
+2.
+
+```{r}
+quantile(1-res_2$media/res_2$num_distintos, probs=c(0.1, 0.5, .9))
+```

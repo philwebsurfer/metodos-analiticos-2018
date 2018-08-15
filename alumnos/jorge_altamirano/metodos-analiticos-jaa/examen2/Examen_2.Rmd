@@ -1,0 +1,102 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+setwd("~/Documents/MA2018_PF")
+library(wordVectors)
+library(jsonlite)
+library(tidyverse)
+library(tsne)
+library(ggplot2)
+library(ggrepel)
+```
+
+
+```{r}
+json_file <- "data/part-00000-857a7cc2-c3b0-453c-a78a-8aa6009b5ec0-c000.json"
+```
+
+
+```{r}
+out <- fromJSON(sprintf("[%s]",paste(readLines(json_file),collapse = ",")))
+clean_ingredients <- out$ingredients3
+```
+
+```{r}
+clean_ingredients_wo_space <-lapply(clean_ingredients, function(x){
+  gsub(" ,",",",x)
+})
+
+clean_ingredients_wo_space <-lapply(clean_ingredients_wo_space, function(x){
+  gsub(", ",",",x)
+})
+
+clean_ingredients_wo_space <-lapply(clean_ingredients_wo_space, function(x){
+  gsub(" ","_",x)
+})
+
+clean_ingredients_wo_space <-lapply(clean_ingredients_wo_space, function(x){
+  gsub(","," ",x)
+})
+
+
+head(clean_ingredients_wo_space)
+```
+
+
+
+```{r}
+if(!file.exists('data/ingredients_w2v.txt')){
+tmp <- tempfile()
+write_lines(clean_ingredients_wo_space,tmp)
+prep <- prep_word2vec(tmp,destination = 'data/ingredients_w2v.txt',bundle_ngrams = 2)
+}
+rm(tmp,prep,clean_ingredients)
+```
+
+```{r}
+if (!file.exists('data/ingredients_w2v.bin')) {
+  model <- train_word2vec('data/ingredients_w2v.txt', 'data/ingredients_w2v.bin',
+          vectors = 50, threads = 4, window = 4, cbow = 0,  
+          iter = 5, negative_samples = 10, min_count = 5) 
+} else {
+  model <- read.vectors('data/ingredients_w2v.bin')
+}
+
+```
+```{r}
+as.numeric(model[["salt"]])
+```
+
+```{r}
+ejemplos <- model %>% closest_to("pepper", n = 5)
+ejemplos
+```
+```{r}
+palabras <- c("salt", "pepper", "eggs")
+model %>% closest_to(palabras)
+```
+
+```{r}
+mat_vs <- model@.Data
+num_palabras <- 500 
+
+set.seed(1203)
+
+vs_2 <- tsne(mat_vs[1:num_palabras, ], 
+             max_iter = 200, perplexity = 20)
+
+```
+
+
+```{r}
+df_vs <- as.data.frame(vs_2) %>%
+  mutate(palabra = rownames(mat_vs[1:num_palabras, ]))
+ggplot(df_vs %>% sample_n(250), 
+  aes(x = V1, y = V2, label = palabra)) +
+  geom_point(colour = 'red', alpha = 0.3) +
+  geom_text_repel(size = 1, force = 0.3, segment.alpha = 0.1)
+```
+
