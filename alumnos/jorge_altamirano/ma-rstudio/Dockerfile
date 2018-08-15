@@ -1,4 +1,4 @@
-FROM rocker/verse:3.4.3
+FROM rocker/verse:3.4.4
 
 
 RUN mkdir /home/rstudio/.cache \
@@ -7,7 +7,7 @@ RUN mkdir /home/rstudio/.cache \
 ENV RSTUDIO_SPARK_HOME /home/rstudio/.cache/spark/spark-2.0.2-bin-hadoop2.7
 
 RUN apt-get update \ 
-    && apt-get install -y libudunits2-dev python python-dev python-pip \
+    && apt-get install -y libudunits2-dev python python-dev python-pip jags r-cran-rjags \
     && pip install --upgrade tensorflow \
     && pip install --upgrade keras scipy h5py pyyaml requests Pillow \
     && install2.r --error \
@@ -34,10 +34,12 @@ RUN apt-get update \
         tsne \
         keras \
         devtools \
+    && r -e 'devtools::install_github("rstudio/r2d3")' \
     && install2.r --error \
 	--deps TRUE \
-	sparklyr  \
-    && r -e 'devtools::install_github("rstudio/sparklyr")' \
+	R2jags \
+	sparklyr \
     && r -e 'sparklyr::spark_install()' \
     && r -e 'devtools::install_github("bmschmidt/wordVectors")' \
     && mv /root/spark/ /home/rstudio/.cache 
+#&& r -e 'devtools::install_github("rstudio/sparklyr")' \
