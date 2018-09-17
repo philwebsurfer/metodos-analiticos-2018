@@ -6,8 +6,11 @@ RUN mkdir /home/rstudio/.cache \
   && mkdir -p /home/rstudio/Documents/jorge3a/itam
 ENV RSTUDIO_SPARK_HOME /home/rstudio/.cache/spark/spark-2.0.2-bin-hadoop2.7
 
-RUN apt-get update \ 
-    && apt-get install -y libudunits2-dev python python-dev python-pip jags r-cran-rjags \
+RUN echo 'deb http://ftp.de.debian.org/debian stretch main'>> /etc/apt/sources.list \
+    && apt-get update \ 
+    && apt-get install -y libudunits2-dev python python-dev python-pip jags r-cran-rjags libc6-i386 \
+    && wget http://pj.freefaculty.org/Ubuntu/15.04/amd64/openbugs/openbugs_3.2.3-1_amd64.deb \
+    && dpkg -i openbugs_3.2.3-1_amd64.deb \
     && pip install --upgrade tensorflow \
     && pip install --upgrade keras scipy h5py pyyaml requests Pillow \
     && install2.r --error \
@@ -37,7 +40,9 @@ RUN apt-get update \
     && r -e 'devtools::install_github("rstudio/r2d3")' \
     && install2.r --error \
 	--deps TRUE \
+	bayesm \
 	R2jags \
+	R2OpenBUGS \
 	sparklyr \
     && r -e 'sparklyr::spark_install()' \
     && r -e 'devtools::install_github("bmschmidt/wordVectors")' \
