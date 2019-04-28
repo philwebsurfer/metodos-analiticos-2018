@@ -44,6 +44,7 @@ RUN echo 'deb http://ftp.de.debian.org/debian stretch main'>> /etc/apt/sources.l
 	loo \
     && r -e 'devtools::install_github("rstudio/r2d3")' \
     && r -e "devtools::install_github('diegovalle/mxmaps')" \
+    && r -e "webshot::install_phantomjs()" \
     && install2.r --error \
 	--deps TRUE \
 	bayesm \
