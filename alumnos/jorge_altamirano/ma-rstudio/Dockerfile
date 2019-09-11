@@ -7,7 +7,7 @@ ENV RSTUDIO_SPARK_HOME /home/rstudio/.cache/spark/spark-2.0.2-bin-hadoop2.7
 
 RUN echo 'deb http://ftp.de.debian.org/debian stretch main'>> /etc/apt/sources.list \
     && apt-get update \ 
-    && apt-get install -y libudunits2-dev python python-dev python-pip jags libc6-i386 libgdal-dev \
+    && apt-get install -y libudunits2-dev python python-dev python-pip jags libc6-i386 libgdal-dev libmpfr-dev \
     && wget http://pj.freefaculty.org/Ubuntu/15.04/amd64/openbugs/openbugs_3.2.3-1_amd64.deb \
     && dpkg -i openbugs_3.2.3-1_amd64.deb \
     && pip install --upgrade tensorflow \
@@ -38,6 +38,7 @@ RUN echo 'deb http://ftp.de.debian.org/debian stretch main'>> /etc/apt/sources.l
         devtools \
 	fastDummies \
 	GGally \
+	CVXR \
 	ggridges \
 	rjags \
 	webshot \
@@ -45,6 +46,8 @@ RUN echo 'deb http://ftp.de.debian.org/debian stretch main'>> /etc/apt/sources.l
     && r -e 'devtools::install_github("rstudio/r2d3")' \
     && r -e "devtools::install_github('diegovalle/mxmaps')" \
     && r -e "webshot::install_phantomjs()" \
+    && r -e 'devtools::install_github("easystats/insight")' \
+    && r -e 'devtools::install_github("easystats/bayestestR")' \
     && install2.r --error \
 	--deps TRUE \
 	bayesm \
