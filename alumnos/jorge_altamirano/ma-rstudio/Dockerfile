@@ -42,7 +42,12 @@ RUN echo 'deb http://ftp.de.debian.org/debian stretch main'>> /etc/apt/sources.l
 	ggridges \
 	rjags \
 	webshot \
+	gridExtra \
 	loo \
+	mcmcplots \
+	car \
+	asbio \
+	rpivoTable \
     && r -e 'devtools::install_github("rstudio/r2d3")' \
     && r -e "devtools::install_github('diegovalle/mxmaps')" \
     && r -e "webshot::install_phantomjs()" \
@@ -56,5 +61,6 @@ RUN echo 'deb http://ftp.de.debian.org/debian stretch main'>> /etc/apt/sources.l
 	sparklyr \
     && r -e 'sparklyr::spark_install()' \
     && r -e 'devtools::install_github("bmschmidt/wordVectors")' \
+    && r -e 'install.packages("rstan", repos = "https://cloud.r-project.org/")' \
     && mv /root/spark/ /home/rstudio/.cache 
 #&& r -e 'devtools::install_github("rstudio/sparklyr")' \
