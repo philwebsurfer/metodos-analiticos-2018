@@ -47,6 +47,10 @@ RUN apt-get update \
 	car \
 	nullabor \
 	rpivotTable \
+	openxlsx \
+	gridExtra \
+	writexl \
+	kableExtra \
     && r -e 'devtools::install_github("rstudio/r2d3")' \
     && r -e "devtools::install_github('diegovalle/mxmaps')" \
     && r -e "webshot::install_phantomjs()" \
