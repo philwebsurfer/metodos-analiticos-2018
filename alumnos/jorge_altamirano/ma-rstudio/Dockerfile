@@ -49,8 +49,13 @@ RUN apt-get update \
 	rpivotTable \
 	openxlsx \
 	gridExtra \
-	writexl \
 	kableExtra \
+	writexl \
+	LaplacesDemon \
+	pryr \
+	rsample \
+	survey \
+	srvyr \
     && r -e 'devtools::install_github("rstudio/r2d3")' \
     && r -e "devtools::install_github('diegovalle/mxmaps')" \
     && r -e "webshot::install_phantomjs()" \
