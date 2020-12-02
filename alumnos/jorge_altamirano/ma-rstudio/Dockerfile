@@ -3,10 +3,8 @@ FROM philwebsurfer/ma-rstudio-base:latest
 #RUN mkdir /home/rstudio/.cache \
 #  && chown -R rstudio:rstudio /home/rstudio/.cache \
 #  && mkdir -p /home/rstudio/Documents/jorge3a/itam
-ENV RSTUDIO_SPARK_HOME /home/rstudio/.cache/spark/spark-2.0.2-bin-hadoop2.7
+#ENV RSTUDIO_SPARK_HOME /home/rstudio/.cache/spark/spark-2.0.2-bin-hadoop2.7
 
-RUN apt-get update 
-#RUN apt-get upgrade -y 
 RUN pip install --upgrade keras scipy h5py pyyaml requests Pillow 
 RUN install2.r --error \
 	arules \
@@ -56,7 +54,15 @@ RUN install2.r --error \
 	srvyr \
 	nortest \
 	httr \
-	rvest 
+	rvest && \
+	rm -rf /tmp/downloaded_packages/
 RUN r -e 'devtools::install_github("tereom/estcomp")' 
-RUN apt-get clean all
+#RUN apt-get update 
+#RUN apt-get upgrade -y 
+RUN apt-get update &&  \
+	apt-get install -y texlive-fonts-recommended  \
+	texlive-fonts-extra \
+	texlive-latex-extra \
+	texlive-plain-generic && \
+	apt-get clean all
 
